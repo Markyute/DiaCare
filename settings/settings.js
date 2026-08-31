@@ -1,4 +1,6 @@
-'use strict';
+import { auth, db, onAuthStateChanged } from '../shared/firebase.js';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+
 /* ================================================================
    DiaCare RHU Libon — Settings JavaScript
    ================================================================ */
@@ -78,34 +80,50 @@ photoInput?.addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-/* Prefill from whatever was last saved, so a refresh shows the
-   nurse's own edits (including their uploaded photo) instead of the
-   hardcoded sample profile. */
-(function prefillProfileForm() {
-  const saved = loadStoredProfile();
-  if (!saved) return;
+/* Prefill from the signed-in user's profile document rather than from
+   this browser's storage. The form used to show whatever had last been
+   saved on this machine, which meant the same person saw different
+   details depending on where they signed in. */
+onAuthStateChanged(auth, async (user) => {
+  if (!user) return;
+
+  let profile = {};
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    profile = snap.data() || {};
+  } catch (err) {
+    console.error('Could not load your profile:', err);
+  }
+
+  const name = profile.fullName || user.displayName || '';
+  const initials = profile.initials
+    || name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+    || '?';
+
   const nameEl    = document.getElementById('pfFullName');
   const emailEl   = document.getElementById('pfEmail');
   const contactEl = document.getElementById('pfContact');
   const bigAv     = document.getElementById('profileAvatar');
   const dispName  = document.getElementById('profileDisplayName');
-  if (nameEl)    nameEl.value = saved.name;
-  if (emailEl)   emailEl.value = saved.email;
-  if (contactEl && saved.contact) contactEl.value = saved.contact;
+
+  if (nameEl)    nameEl.value = name;
+  if (emailEl)   emailEl.value = profile.email || user.email || '';
+  if (contactEl) contactEl.value = profile.contact || '';
   if (bigAv) {
-    if (saved.photo) bigAv.innerHTML = `<img src="${saved.photo}" alt="Profile" />`;
-    else bigAv.textContent = saved.initials;
+    if (profile.photo) bigAv.innerHTML = `<img src="${profile.photo}" alt="Profile" />`;
+    else bigAv.textContent = initials;
   }
-  if (dispName) dispName.textContent = saved.name;
-})();
+  if (dispName) dispName.textContent = name || 'Your profile';
+});
 
 /* Save profile */
-document.getElementById('btnSaveProfile')?.addEventListener('click', () => {
+document.getElementById('btnSaveProfile')?.addEventListener('click', async () => {
   const name    = document.getElementById('pfFullName').value.trim();
-  const email   = document.getElementById('pfEmail').value.trim();
   const contact = document.getElementById('pfContact').value.trim();
   if (!name)  { showToast('Full name is required.', true); return; }
-  if (!email) { showToast('Email is required.', true); return; }
+
+  const user = auth.currentUser;
+  if (!user) { showToast('Your session expired. Sign in again.', true); return; }
 
   const initials = name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
   /* Whatever photo is currently showing (freshly picked this
@@ -114,10 +132,25 @@ document.getElementById('btnSaveProfile')?.addEventListener('click', () => {
   const photoImg = profileAv?.querySelector('img');
   const photo = photoImg ? photoImg.src : null;
 
-  /* Persist — survives a refresh instead of resetting to default */
-  const saved = saveStoredProfile({ name, email, contact, initials, photo });
-  if (!saved) {
-    showToast('Could not save — storage is full or unavailable.', true);
+  /* Written to the profile document, not to this browser. It was going
+     to localStorage, so a nurse who renamed themselves was renamed on
+     that machine only - the Super Admin's roster, and the same nurse on
+     any other computer, still showed the old name.
+
+     Only these three fields are writable by their owner; firestore.rules
+     rejects an update that touches role, status, or email, so this
+     cannot be used to self-promote. */
+  try {
+    await updateDoc(doc(db, 'users', user.uid), {
+      fullName: name,
+      contact,
+      initials,
+      photo: photo || '',
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    console.error('Could not save the profile:', err);
+    showToast('Could not save your profile. Check your connection and try again.', true);
     return;
   }
 

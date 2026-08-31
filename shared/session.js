@@ -53,7 +53,7 @@ function applyRoleVisibility(role) {
   });
 }
 
-function paint({ name, role, email }) {
+function paint({ name, role, email, photo }) {
   applyRoleVisibility(role);
 
   const label = ROLE_LABELS[role] || 'Staff';
@@ -67,10 +67,11 @@ function paint({ name, role, email }) {
   if (roleEl) roleEl.textContent = label;
 
   const avatarEl = document.getElementById('navAvatar');
-  /* Only write initials if the avatar is not already showing a photo the
-     profile page put there. */
-  if (avatarEl && !avatarEl.querySelector('img')) {
-    avatarEl.textContent = initialsOf(name);
+  if (avatarEl) {
+    /* The photo comes from the profile document now, so it follows the
+       person between machines instead of living in one browser. */
+    if (photo) avatarEl.innerHTML = '<img src="' + photo + '" alt="" />';
+    else avatarEl.textContent = initialsOf(name);
   }
 
   const chip = document.getElementById('navAvatarBtn');
@@ -110,6 +111,7 @@ onAuthStateChanged(auth, (user) => {
         name: profile.fullName || user.displayName || user.email || 'Signed in',
         role: profile.role,
         email: profile.email || user.email || '',
+        photo: profile.photo || '',
       });
     },
     (err) => {

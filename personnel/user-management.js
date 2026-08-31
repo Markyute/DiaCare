@@ -6,7 +6,7 @@
 import { db } from '../shared/firebase.js';
 import {
   collection,
-  getDocs,
+  onSnapshot,
   query,
   orderBy,
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
@@ -82,8 +82,11 @@ function formatDate(value) {
   return date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-async function loadPersonnel() {
-  const snap = await getDocs(query(collection(db, 'users'), orderBy('createdAt', 'desc')));
+/* A live subscription rather than one read at page load. The roster was
+   a snapshot of whenever this tab opened, so an account created or
+   deactivated by another Super Admin - or a nurse renaming themselves in
+   Settings - was invisible here until someone happened to refresh. */
+function mapPersonnel(snap) {
   PERSONNEL = snap.docs.map((doc) => {
     const d = doc.data();
     return {
@@ -104,8 +107,30 @@ async function loadPersonnel() {
   });
 }
 
+function watchPersonnel() {
+  return new Promise((resolve) => {
+    let settled = false;
+    onSnapshot(
+      query(collection(db, 'users'), orderBy('createdAt', 'desc')),
+      (snap) => {
+        mapPersonnel(snap);
+        renderStats();
+        renderTable();
+        if (!settled) { settled = true; resolve(); }
+      },
+      (err) => {
+        console.error('Lost the personnel subscription:', err);
+        showToast('Could not load the personnel list. Check your connection and reload.');
+        if (!settled) { settled = true; resolve(); }
+      }
+    );
+  });
+}
+
+/* The subscription re-renders on its own; a write only needs to wait
+   for the echo, which arrives on its own. Kept so callers reading as
+   "save then refresh" still make sense. */
 async function refresh() {
-  await loadPersonnel();
   renderStats();
   renderTable();
 }
@@ -678,10 +703,5 @@ window.addEventListener('load', async () => {
      first and fills in. auth-guard.js has already established that
      there is a verified session by the time this runs; without one the
      rules reject the read and the page has bounced anyway. */
-  try {
-    await refresh();
-  } catch (err) {
-    showToast('Could not load the personnel list. Check your connection and reload.');
-    console.error('Personnel load failed:', err);
-  }
+  await watchPersonnel();
 });

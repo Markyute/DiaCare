@@ -1,50 +1,25 @@
 'use strict';
 /* ================================================================
-   DiaCare RHU Libon — Shared Profile
-   The Account Profile form (Settings page) writes name/email/contact
-   here so edits survive a refresh instead of resetting to the
-   hardcoded default. Every page loads this before its own script so
-   the top-nav avatar/name always reflects the last saved profile.
+   DiaCare RHU Libon — Shared Profile (retired)
+
+   This used to hold the signed-in user's name, email, contact and photo
+   in localStorage and paint the top-nav from it. That made a profile a
+   property of a browser rather than of a person: a nurse who renamed
+   themselves was renamed on that one machine, and nobody else — not the
+   Super Admin's roster, not the same nurse on another computer — ever
+   saw it.
+
+   The profile now lives in the user's Firestore document. shared/
+   session.js reads it and paints the nav; settings.js reads and writes
+   it. Neither uses this file.
+
+   The file remains because nine pages load it, and its only job now is
+   to clear the stale key so an old cached name cannot reappear.
    ================================================================ */
 const DIACARE_PROFILE_KEY = 'diacare_profile';
 
-function loadStoredProfile() {
-  try {
-    const raw = localStorage.getItem(DIACARE_PROFILE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+try {
+  localStorage.removeItem(DIACARE_PROFILE_KEY);
+} catch (err) {
+  /* Private browsing, or storage disabled. Nothing to clean up. */
 }
-
-function saveStoredProfile(profile) {
-  try {
-    localStorage.setItem(DIACARE_PROFILE_KEY, JSON.stringify(profile));
-    return true;
-  } catch {
-    /* Private-browsing / quota — edit won't survive a refresh.
-       Caller decides how to tell the user. */
-    return false;
-  }
-}
-
-function applyStoredProfile() {
-  const profile = loadStoredProfile();
-  if (!profile) return;
-
-  /* Settings page uses navName/navAvatar; every other page uses
-     navUserName/navAvatar — cover both without renaming either. */
-  const nameEls = [
-    document.getElementById('navUserName'),
-    document.getElementById('navName'),
-  ];
-  const avatarEl = document.getElementById('navAvatar');
-
-  nameEls.forEach(el => { if (el) el.textContent = profile.name; });
-  if (avatarEl) {
-    if (profile.photo) avatarEl.innerHTML = `<img src="${profile.photo}" alt="Profile" />`;
-    else avatarEl.textContent = profile.initials;
-  }
-}
-
-applyStoredProfile();

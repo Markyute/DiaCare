@@ -153,8 +153,16 @@
                 <input class="sfield-input" type="text" id="pfFullName" value="Maria Santos" placeholder="Enter full name" title="Full Name" />
               </div>
               <div class="sfield-group">
-                <label class="sfield-label" for="pfEmail">Email Address <span class="required">*</span></label>
-                <input class="sfield-input" type="email" id="pfEmail" value="msantos@rhulibon.gov.ph" placeholder="Enter email address" title="Email Address" />
+                <label class="sfield-label" for="pfEmail">Email Address</label>
+                <!-- Read-only: this is the sign-in address and where the
+                     one-time code is sent, so changing it is an account
+                     change rather than a profile edit. A Super Admin does
+                     it from Personnel, which updates Firebase Auth too -
+                     editing it here would have changed the displayed
+                     address while leaving the actual login untouched. -->
+                <input class="sfield-input" type="email" id="pfEmail" readonly
+                  placeholder="Loading..." title="Email address (managed by an administrator)" />
+                <div class="sfield-hint">Your sign-in address. Ask a Super Admin to change it.</div>
               </div>
               <div class="sfield-group">
                 <label class="sfield-label" for="pfContact">Contact Number</label>
@@ -435,6 +443,6 @@
 <script src="../shared/profile.js"></script>
   <script type="module" src="../shared/session.js"></script>
 <script type="module" src="../shared/logout-confirm.js"></script>
-<script src="settings.js"></script>
+<script type="module" src="settings.js"></script>
 </body>
 </html>

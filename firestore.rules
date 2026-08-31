@@ -44,7 +44,18 @@ service cloud.firestore {
     // what stops a nurse from simply querying the collection.
     match /users/{uid} {
       allow read: if isAdmin() || (signedInAndVerified() && request.auth.uid == uid);
-      allow write: if false;
+
+      // Someone may edit their own display details from Settings. The
+      // whitelist is the security boundary: role, status, and email are
+      // not in it, so this cannot be used to self-promote or to
+      // reactivate a deactivated account. Everything else about an
+      // account still goes through the admin-only API.
+      allow update: if signedInAndVerified()
+                    && request.auth.uid == uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['fullName', 'contact', 'initials', 'photo', 'updatedAt']);
+
+      allow create, delete: if false;
     }
 
     // One-time codes. Never readable or writable by a browser — the
