@@ -2,27 +2,25 @@
 /* ================================================================
    DiaCare — first administrator
 
-   The /api/create-staff route requires an already-verified admin
-   to call it, so the very first admin can't be made through the app.
-   This script does it once, locally, with a service account key.
+   The /api/create-staff route requires an already-verified admin to call
+   it, so the very first admin can't be made through the app. This script
+   does it once, locally, with a service-account key.
 
    Usage:
+     $env:GOOGLE_APPLICATION_CREDENTIALS='C:\path\to\key.json'
      node scripts/create-admin.js you@gmail.com "Juan Dela Cruz"
 
-   Needs a service account key. Firebase console -> Project settings ->
-   Service accounts -> Generate new private key, then:
-     set GOOGLE_APPLICATION_CREDENTIALS=C:\path\to\key.json   (cmd)
-     $env:GOOGLE_APPLICATION_CREDENTIALS='C:\path\to\key.json' (PowerShell)
+   Get the key from the Firebase console: Project settings -> Service
+   accounts -> Generate new private key. It is a full-project master
+   credential — keep it outside the project folder, never commit it, and
+   delete it once setup is done.
 
-   That key file is a full-project master credential. Keep it out of the
-   project folder, never commit it, and delete it once setup is done.
-
-   The password is generated here and printed once rather than taken as
-   an argument, so it doesn't end up in shell history.
+   The password is typed in, masked, and never printed. Earlier this
+   script generated one and echoed it, which put a live credential into
+   the terminal scrollback of whoever ran it.
    ================================================================ */
 
 const admin = require('firebase-admin');
-const crypto = require('crypto');
 const readline = require('readline');
 
 const email = process.argv[2];
@@ -32,26 +30,39 @@ if (!email || !fullName) {
   console.error('Usage: node scripts/create-admin.js <email> "<Full Name>"');
   process.exit(1);
 }
+if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  console.error('That is not a valid email address.');
+  process.exit(1);
+}
 if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
   console.error('GOOGLE_APPLICATION_CREDENTIALS is not set. See the comment at the top of this file.');
   process.exit(1);
 }
 
-/* Ambiguous characters left out so the printed password can be typed
-   from a screen without confusing 0/O or 1/l. */
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-function generatePassword(length = 16) {
-  let out = '';
-  for (let i = 0; i < length; i++) out += ALPHABET[crypto.randomInt(0, ALPHABET.length)];
-  return out;
-}
-
-function confirm(question) {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+/* ================================================================
+   PROMPTS
+   ================================================================ */
+function ask(question, { mask = false } = {}) {
   return new Promise((resolve) => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true });
+
+    if (mask) {
+      /* Overriding _writeToOutput stops readline echoing at all.
+         Intercepting stdin afterwards would be a race — the character is
+         already on screen, and a pasted value arrives as one chunk. */
+      rl._writeToOutput = function (chunk) {
+        if (chunk.includes(question)) {
+          rl.output.write(question + '*'.repeat(rl.line.length));
+        } else {
+          rl.output.write('*');
+        }
+      };
+    }
+
     rl.question(question, (answer) => {
+      if (mask) process.stdout.write('\n');
       rl.close();
-      resolve(answer.trim().toLowerCase() === 'yes');
+      resolve(mask ? answer : answer.trim());
     });
   });
 }
@@ -67,14 +78,24 @@ async function main() {
   console.log('Full name: ' + fullName);
   console.log('Role:      admin\n');
 
-  if (!(await confirm('Create this administrator? Type yes to continue: '))) {
+  const confirmed = await ask('Create this administrator? Type yes to continue: ');
+  if (confirmed.toLowerCase() !== 'yes') {
     console.log('Cancelled. Nothing was created.');
     process.exit(0);
   }
 
-  const password = generatePassword();
-  let user;
+  const password = await ask('Choose a password (min 10 chars, input hidden): ', { mask: true });
+  if (password.length < 10) {
+    console.error('Too short — Firebase will reject anything under 6, and 10 is the floor here.');
+    process.exit(1);
+  }
+  const again = await ask('Type it again: ', { mask: true });
+  if (password !== again) {
+    console.error('Those do not match. Nothing was created.');
+    process.exit(1);
+  }
 
+  let user;
   try {
     user = await auth.createUser({ email, password, displayName: fullName });
     console.log('\nCreated Firebase Auth user ' + user.uid);
@@ -105,9 +126,9 @@ async function main() {
 
   /* No OTP claims are granted here on purpose — the first sign-in still
      has to pass the emailed code like everyone else. */
-  console.log('\n  Temporary password: ' + password);
-  console.log('\nShown once. Sign in at login/login.html and change it from Settings.');
-  console.log('Signing in also requires the six-digit code sent to ' + email + '.\n');
+  console.log('\nDone. Sign in with that email and password.');
+  console.log('A six-digit code will be sent to ' + email + '.');
+  console.log('\nDelete the service-account key file now that setup is finished.\n');
 }
 
 main().then(() => process.exit(0)).catch((err) => {
