@@ -1,0 +1,19 @@
+# Vercel serves every uploaded file that isn't a function, so anything
+# left here is publicly fetchable by URL. Only diacare/ (the site) and
+# api/ (the functions) belong in a deployment.
+
+node_modules
+.git
+
+# Setup and admin tooling. None of it carries a credential, but it has no
+# business being downloadable from the live site.
+scripts
+SETUP.md
+.env.example
+
+# Firebase project config. Deployed with the Firebase CLI, not with the
+# site, and firestore.rules in particular is a map of the access model.
+firebase.json
+firestore.rules
+firestore.indexes.json
+.firebaserc
