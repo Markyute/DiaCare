@@ -4,7 +4,7 @@
 
    Reads the Firebase service-account JSON off disk and asks for the
    Gmail credentials, then sets all five environment variables on the
-   linked Vercel project for production, preview, and development.
+   linked Vercel project.
 
    Usage:
      node scripts/push-env.js "C:\path\to\serviceAccountKey.json"
@@ -79,23 +79,29 @@ function ask(question, { mask = false } = {}) {
   return new Promise((resolve) => {
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout, terminal: true });
     if (mask) {
-      /* readline has no built-in masking; suppress its echo and print a
-         dot per keypress instead. */
-      const onData = (char) => {
-        if (['\n', '\r', '\u0004'].includes(char.toString())) return;
-        readline.moveCursor(process.stdout, -1, 0);
-        process.stdout.write('*');
+      /* Intercepting stdin to overwrite what was already echoed is a
+         race: the character is on screen before the handler runs, and a
+         paste arrives as one chunk so only the last character gets
+         covered. Overriding _writeToOutput stops the echo happening at
+         all -- readline calls it for every redraw, so returning the
+         prompt plus asterisks means the value is never printed.
+
+         An app password is exactly the thing that must not survive in a
+         screenshot or a pasted terminal log. */
+      rl._writeToOutput = function (chunk) {
+        if (chunk.includes(question)) {
+          rl.output.write(question + '*'.repeat(rl.line.length));
+        } else {
+          rl.output.write('*');
+        }
       };
-      process.stdin.on('data', onData);
-      rl.question(question, (answer) => {
-        process.stdin.removeListener('data', onData);
-        process.stdout.write('\n');
-        rl.close();
-        resolve(answer.trim());
-      });
-    } else {
-      rl.question(question, (answer) => { rl.close(); resolve(answer.trim()); });
     }
+
+    rl.question(question, (answer) => {
+      if (mask) process.stdout.write('\n');
+      rl.close();
+      resolve(answer.trim());
+    });
   });
 }
 
@@ -121,7 +127,7 @@ function vercel(args, stdinValue) {
   });
 }
 
-const TARGETS = ['production', 'preview', 'development'];
+const TARGETS = ['production', 'development'];
 
 async function setVar(name, value) {
   process.stdout.write('  ' + name.padEnd(24));
