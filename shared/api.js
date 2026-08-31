@@ -91,7 +91,7 @@ async function callAnonymous(path, body) {
 export const requestPasswordReset = (email) => callAnonymous('request-password-reset', { email });
 
 export const requestOtp = () => call('request-otp');
-export const verifyOtp = (code) => call('verify-otp', { code });
+export const verifyOtp = (code, remember) => call('verify-otp', { code, remember: !!remember });
 export const endSession = () => call('end-session');
 export const createStaffAccount = (payload) => call('create-staff', payload);
 export const updateStaffAccount = (payload) => call('update-staff', payload);

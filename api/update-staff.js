@@ -156,13 +156,13 @@ module.exports = handle(async (req) => {
   /* Deactivating has to bite immediately rather than at the next
      sign-in, so drop the claims and kill live tokens. */
   if (isAuthAccount && updates.status === 'inactive') {
-    await auth.setCustomUserClaims(id, { otpVerified: false, otpAt: 0 });
+    await auth.setCustomUserClaims(id, { otpVerified: false, otpAt: 0, otpExp: 0 });
     await auth.revokeRefreshTokens(id);
   }
   /* A role change is carried in the token, so the old one has to go too
      or the change only takes effect whenever they happen to sign in. */
   if (isAuthAccount && updates.role && updates.role !== current.role) {
-    await auth.setCustomUserClaims(id, { otpVerified: false, otpAt: 0 });
+    await auth.setCustomUserClaims(id, { otpVerified: false, otpAt: 0, otpExp: 0 });
     await auth.revokeRefreshTokens(id);
   }
 

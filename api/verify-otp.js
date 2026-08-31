@@ -20,6 +20,7 @@ const {
   timingSafeEqual,
   MAX_ATTEMPTS,
   SESSION_TTL_MS,
+  REMEMBER_TTL_MS,
 } = require('./_lib/core');
 
 module.exports = handle(async (req) => {
@@ -67,9 +68,18 @@ module.exports = handle(async (req) => {
     tx.delete(ref);
   });
 
+  /* The session's end is stamped into the claim rather than left for
+     each reader to work out from otpAt plus a constant it has to know.
+     That constant lived in three places - the rules, the client, and
+     here - and "keep me signed in" could not change it without all
+     three agreeing. */
+  const remember = (req.body && req.body.remember) === true;
+  const expiresAt = now + (remember ? REMEMBER_TTL_MS : SESSION_TTL_MS);
+
   await auth.setCustomUserClaims(uid, {
     otpVerified: true,
     otpAt: now,
+    otpExp: expiresAt,
     role: profile.role || 'staff',
   });
 
@@ -82,6 +92,7 @@ module.exports = handle(async (req) => {
     verified: true,
     role: profile.role || 'staff',
     fullName: profile.fullName || '',
-    sessionExpiresAt: now + SESSION_TTL_MS,
+    sessionExpiresAt: expiresAt,
+    remembered: remember,
   };
 });

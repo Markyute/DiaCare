@@ -14,7 +14,7 @@ module.exports = handle(async (req) => {
   const user = await requireUser(req);
   const uid = user.uid;
 
-  await auth.setCustomUserClaims(uid, { otpVerified: false, otpAt: 0 });
+  await auth.setCustomUserClaims(uid, { otpVerified: false, otpAt: 0, otpExp: 0 });
   await auth.revokeRefreshTokens(uid);
   await db.collection('otp_codes').doc(uid).delete().catch(() => {});
 

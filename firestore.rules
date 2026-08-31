@@ -10,10 +10,23 @@ service cloud.firestore {
     function signedInAndVerified() {
       return request.auth != null
           && request.auth.token.otpVerified == true
-          && request.auth.token.otpAt is number
-          // Claims survive across sessions, so freshness is enforced here:
-          // a verification older than 12 hours no longer grants access.
-          && request.time.toMillis() - request.auth.token.otpAt < 43200000;
+          && sessionStillValid();
+    }
+
+    // Claims survive across sessions, so the session's end is enforced
+    // here rather than trusted to the browser. verify-otp stamps otpExp,
+    // which is 12 hours normally and 30 days when the user asked to stay
+    // signed in - the length is a property of the session, not a
+    // constant every reader has to agree on.
+    //
+    // A session verified before otpExp existed only carries otpAt; those
+    // keep the original 12-hour window rather than being locked out
+    // mid-shift by a deploy.
+    function sessionStillValid() {
+      return request.auth.token.otpExp is number
+          ? request.time.toMillis() < request.auth.token.otpExp
+          : (request.auth.token.otpAt is number
+             && request.time.toMillis() - request.auth.token.otpAt < 43200000);
     }
 
     function isAdmin() {

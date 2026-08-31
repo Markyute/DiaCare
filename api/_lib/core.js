@@ -56,6 +56,11 @@ const MAX_SENDS_PER_WINDOW = 5;
 const SEND_WINDOW_MS = 60 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 30 * 1000;
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+/* "Keep me signed in". Long enough to be worth ticking, short enough
+   that a shared or lost machine does not stay signed in indefinitely.
+   Signing out still ends it immediately - endSession drops the claims
+   and revokes the refresh token. */
+const REMEMBER_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 /* ================================================================
    ERRORS — thrown anywhere, turned into a status + message by
@@ -233,4 +238,5 @@ module.exports = {
   SEND_WINDOW_MS,
   RESEND_COOLDOWN_MS,
   SESSION_TTL_MS,
+  REMEMBER_TTL_MS,
 };

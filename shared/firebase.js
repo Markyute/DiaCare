@@ -86,8 +86,8 @@ export function authErrorMessage(err) {
   return 'Something went wrong. Please try again.';
 }
 
-/* How long a verification is good for. Must match SESSION_TTL_MS in
-   api/_lib/core.js and the window in firestore.rules. */
+/* Fallback only, for a session verified before otpExp was stamped into
+   the claim. New sessions carry their own expiry. */
 export const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 
 /* A signed-in user is not an authorized one — the emailed code has to
@@ -98,6 +98,13 @@ export async function hasVerifiedSession(user) {
   const token = await getIdTokenResult(user);
   const claims = token.claims || {};
   if (claims.otpVerified !== true) return false;
+  /* Prefer the stamped expiry: it already accounts for whether the user
+     asked to stay signed in. Deriving it from otpAt here would mean
+     re-deciding that, and getting it wrong for anyone who ticked the
+     box. */
+  const exp = Number(claims.otpExp || 0);
+  if (exp > 0) return Date.now() < exp;
+
   const at = Number(claims.otpAt || 0);
   return at > 0 && Date.now() - at < SESSION_TTL_MS;
 }

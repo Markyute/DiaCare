@@ -48,7 +48,7 @@ module.exports = handle(async (req) => {
   if (hasLogin) {
     await auth.updateUser(id, { disabled: status === 'inactive' });
     if (status === 'inactive') {
-      await auth.setCustomUserClaims(id, { otpVerified: false, otpAt: 0 });
+      await auth.setCustomUserClaims(id, { otpVerified: false, otpAt: 0, otpExp: 0 });
       await auth.revokeRefreshTokens(id);
     }
   }

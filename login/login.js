@@ -179,11 +179,17 @@ document.getElementById('backFromForgotSent')?.addEventListener('click', () => s
    earns the claims the dashboard's data reads require.
    ================================================================ */
 
+/* Held between the two screens: the choice is made on the sign-in form
+   but only takes effect at verification, which is what sets the session
+   length. */
+let keepMeSignedIn = false;
+
 form?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = emailInput.value.trim();
   const password = passwordInput.value;
-  const keepSignedIn = document.getElementById('keepSignedIn')?.checked;
+  const keepSignedIn = !!document.getElementById('keepSignedIn')?.checked;
+  keepMeSignedIn = keepSignedIn;
 
   if (!validateForm(email, password)) {
     shakeShell();
@@ -272,7 +278,10 @@ tfaForm?.addEventListener('submit', async (e) => {
   setBtnLoading('btnTfaSubmit', 'tfaBtnSpinner', 'tfaBtnLabel', true);
 
   try {
-    await verifyOtp(code);
+    /* Decides the session length as well as the persistence chosen at
+       sign-in. Without this the box only survived a browser restart and
+       still expired overnight, which is not what it says. */
+    await verifyOtp(code, keepMeSignedIn);
   } catch (err) {
     setBtnLoading('btnTfaSubmit', 'tfaBtnSpinner', 'tfaBtnLabel', false);
     /* The function counts the attempt and says how many are left, so its
