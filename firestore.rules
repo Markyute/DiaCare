@@ -9,6 +9,7 @@ service cloud.firestore {
     // step can still read nothing.
     function signedInAndVerified() {
       return request.auth != null
+          && 'otpVerified' in request.auth.token
           && request.auth.token.otpVerified == true
           && sessionStillValid();
     }
@@ -22,15 +23,23 @@ service cloud.firestore {
     // A session verified before otpExp existed only carries otpAt; those
     // keep the original 12-hour window rather than being locked out
     // mid-shift by a deploy.
+    // Every key is checked with `in` before it is read. Reading a key
+    // that is absent from request.auth.token is an error, not a false —
+    // and an error denies the whole request. Written without these
+    // guards, this denied every read for anyone whose token predated
+    // otpExp, which is exactly who the fallback existed to serve.
     function sessionStillValid() {
-      return request.auth.token.otpExp is number
+      return ('otpExp' in request.auth.token && request.auth.token.otpExp is number)
           ? request.time.toMillis() < request.auth.token.otpExp
-          : (request.auth.token.otpAt is number
+          : ('otpAt' in request.auth.token
+             && request.auth.token.otpAt is number
              && request.time.toMillis() - request.auth.token.otpAt < 43200000);
     }
 
     function isAdmin() {
-      return signedInAndVerified() && request.auth.token.role == 'admin';
+      return signedInAndVerified()
+          && 'role' in request.auth.token
+          && request.auth.token.role == 'admin';
     }
 
     // Staff accounts. Everyone verified may read the roster (the personnel
