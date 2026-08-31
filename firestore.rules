@@ -78,7 +78,12 @@ service cloud.firestore {
       // not in it, so this cannot be used to self-promote or to
       // reactivate a deactivated account. Everything else about an
       // account still goes through the admin-only API.
-      allow update: if signedInAndVerified()
+      // A BHW updates the same fields from the app (their photo), so the
+      // self-edit path accepts either identity. The whitelist is what
+      // makes that safe: role, status and email are absent from it, so
+      // neither a nurse nor a BHW can promote themselves or reactivate a
+      // deactivated account by editing their own profile.
+      allow update: if (signedInAndVerified() || isBhw())
                     && request.auth.uid == uid
                     && request.resource.data.diff(resource.data).affectedKeys()
                          .hasOnly(['fullName', 'contact', 'initials', 'photo', 'updatedAt']);
