@@ -1,6 +1,6 @@
 # Vercel serves every uploaded file that isn't a function, so anything
-# left here is publicly fetchable by URL. Only diacare/ (the site) and
-# api/ (the functions) belong in a deployment.
+# left here is publicly fetchable by URL. Only the site's own folders
+# and api/ (the functions) belong in a deployment.
 
 node_modules
 .git

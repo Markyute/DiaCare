@@ -48,7 +48,7 @@ const db = admin.firestore();
 
 /* ================================================================
    LIMITS — mirrored in firestore.rules (SESSION_TTL_MS) and in
-   diacare/shared/firebase.js (SESSION_TTL_MS).
+   shared/firebase.js (SESSION_TTL_MS).
    ================================================================ */
 const CODE_TTL_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 5;

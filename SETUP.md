@@ -33,7 +33,7 @@ the site and `/api` share one origin: no CORS, no API URL to configure.
 - Firebase CLI signed in as `idananjohnmark519@gmail.com`.
 - Project **DiaCare** — id `diacare-fe2d1` — set as the default in `.firebaserc`.
 - Web app **DiaCare Dashboard** created; its config is filled into
-  `diacare/shared/firebase-config.js`.
+  `shared/firebase-config.js`.
 - Firestore `(default)` exists and `firestore.rules` is deployed to it.
 - `npm install` complete at the repo root (`firebase-admin`, `nodemailer`).
 
@@ -61,7 +61,7 @@ account.
 2. Open it and keep three values to hand: `project_id`, `client_email`, `private_key`.
 
 > **Security:** that file is a full-project master credential — it can read every record
-> and mint tokens for any user. Never commit it, never put it under `diacare/`, and delete
+> and mint tokens for any user. Never commit it, never put it in a served folder, and delete
 > it once section 5 is done. `.gitignore` already excludes the usual filenames as a
 > backstop, not as permission to keep it around.
 
@@ -75,42 +75,39 @@ account.
 
 > **Security:** an app password bypasses 2FA for whoever holds it. It belongs only in
 > Vercel's environment variables. Never in `firebase-config.js`, never anywhere under
-> `diacare/`, never in a commit.
+> any served folder, never in a commit.
 
 Gmail SMTP allows roughly 500 messages/day — ample for staff logins. To outgrow it, swap
 the transport in `api/_lib/core.js` for SendGrid or SES; nothing else changes.
 
 ## 4. Deploy to Vercel
 
+Already done — the project is linked as `diacare/diacare-dashboard` and live at
+<https://diacare-dashboard.vercel.app>. To redeploy after a change:
+
 ```bash
 cd "c:/Users/Admin/OneDrive/Desktop/Diacare_Final/DIACARE_WEBDASHBOARD/DIACARE_WEBDASHBOARD"
-npx vercel login
-npx vercel            # first run: answer the prompts, creates the project
-```
-
-Then add the environment variables — **Production, Preview, and Development** for each:
-
-```bash
-npx vercel env add FIREBASE_PROJECT_ID
-npx vercel env add FIREBASE_CLIENT_EMAIL
-npx vercel env add FIREBASE_PRIVATE_KEY     # paste the whole PEM, BEGIN/END lines included
-npx vercel env add GMAIL_USER
-npx vercel env add GMAIL_APP_PASSWORD
-```
-
-Or paste them in the dashboard under **Project → Settings → Environment Variables**.
-`.env.example` names all five. Then ship it:
-
-```bash
 npx vercel --prod
 ```
 
-Vercel prints the live URL. The site is at `/`, the API at `/api/*`.
+The five environment variables are set for Production and Development. Preview is skipped
+deliberately: setting a preview variable makes the CLI ask which git branch it applies to,
+and this project deploys straight from the CLI with no git integration, so preview
+deployments never run. To change a secret, re-run:
 
-### Authorize that domain in Firebase
+```bash
+node scripts/push-env.js "<path to the service-account key>"
+```
 
-**Authentication → Settings → Authorized domains → Add domain** → your `*.vercel.app`
-hostname. Sign-in is rejected from an unlisted origin.
+The site is served from the repo root — `login/`, `dashboard/`, `shared/` and the rest sit
+beside `api/`. `/` redirects to `/login/login.html` rather than rewriting to it: a rewrite
+leaves the browser's URL at `/`, so every relative `href` in the page resolves against the
+wrong directory and the CSS, scripts, and images all 404.
+
+### Authorize the domain in Firebase
+
+**Authentication → Settings → Authorized domains → Add domain** → `diacare-dashboard.vercel.app`.
+Sign-in is rejected from an unlisted origin.
 
 ## 5. Create the first administrator
 
@@ -136,7 +133,7 @@ seconds. Change the password from Settings once you are in.
 ## How the pieces fit
 
 ```
-diacare/login/login.js
+login/login.js
    │
    ├─ signInWithEmailAndPassword ──►  Firebase Auth
    │                                  (password only — grants no data access)
@@ -157,9 +154,9 @@ diacare/login/login.js
 | `api/request-otp.js` · `verify-otp.js` · `end-session.js` | The login flow |
 | `api/create-staff.js` · `set-staff-status.js` | Admin-only account management |
 | `firestore.rules` | The actual security boundary |
-| `diacare/shared/firebase.js` | One Firebase app per page, session freshness check |
-| `diacare/shared/api.js` | Calls `/api/*` with the Firebase ID token attached |
-| `diacare/shared/auth-guard.js` | Redirects unverified visitors (convenience, not security) |
+| `shared/firebase.js` | One Firebase app per page, session freshness check |
+| `shared/api.js` | Calls `/api/*` with the Firebase ID token attached |
+| `shared/auth-guard.js` | Redirects unverified visitors (convenience, not security) |
 | `scripts/create-admin.js` | One-time bootstrap of the first admin |
 
 **Enforced server-side:** code expires in 10 min · 5 wrong guesses kills it · 30 s between

@@ -21,7 +21,7 @@ export const firebaseConfig = {
 };
 
 /* The OTP backend is not Firebase. It runs as serverless functions under
-   /api on the same origin (see api/ and diacare/shared/api.js), which is
+   /api on the same origin (see api/ and shared/api.js), which is
    what keeps this project off the Blaze plan. */
 
 /* Set true to point Auth and Firestore at the local emulators

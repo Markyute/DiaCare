@@ -16,7 +16,7 @@
    Run it yourself. The service-account key can mint a token for any
    user in the project, and the Gmail app password bypasses 2FA for
    whoever holds it — neither should be pasted into a chat, a commit,
-   or anything under diacare/.
+   or anything served as part of the site.
    ================================================================ */
 
 const { spawn } = require('child_process');

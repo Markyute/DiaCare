@@ -5,9 +5,8 @@
       "maxDuration": 30
     }
   },
-  "rewrites": [
-    { "source": "/", "destination": "/diacare/login/login.html" },
-    { "source": "/login", "destination": "/diacare/login/login.html" }
+  "redirects": [
+    { "source": "/", "destination": "/login/login.html", "permanent": false }
   ],
   "headers": [
     {
