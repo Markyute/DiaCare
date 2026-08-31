@@ -36,6 +36,23 @@ service cloud.firestore {
              && request.time.toMillis() - request.auth.token.otpAt < 43200000);
     }
 
+    // A BHW signs in through /api/bhw-login, which mints a custom token
+    // carrying this claim. There is no emailed code on that path: a BHW
+    // has no clinic inbox, often no signal, and the app is offline-first
+    // - a second factor needing a live inbox would make the app unusable
+    // in the field. The trade is that a BHW reaches only their own
+    // patients, checked on every rule below, while the dashboard reaches
+    // every barangay and keeps its code.
+    function isBhw() {
+      return request.auth != null
+          && 'bhwVerified' in request.auth.token
+          && request.auth.token.bhwVerified == true;
+    }
+
+    function ownsPatient(patient) {
+      return isBhw() && patient.assignedBhwId == request.auth.uid;
+    }
+
     function isAdmin() {
       return signedInAndVerified()
           && 'role' in request.auth.token
@@ -52,7 +69,9 @@ service cloud.firestore {
     // Hiding the nav link and bouncing the page are conveniences; this is
     // what stops a nurse from simply querying the collection.
     match /users/{uid} {
-      allow read: if isAdmin() || (signedInAndVerified() && request.auth.uid == uid);
+      allow read: if isAdmin()
+                  || (signedInAndVerified() && request.auth.uid == uid)
+                  || (isBhw() && request.auth.uid == uid);
 
       // Someone may edit their own display details from Settings. The
       // whitelist is the security boundary: role, status, and email are
@@ -86,10 +105,37 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // BHW password hashes and sign-in attempt counters. Never readable
+    // by any client, including the BHW they belong to - a password hash
+    // has no business being reachable from a device. /api/bhw-login
+    // reaches these with the Admin SDK, which bypasses rules.
+    match /bhw_credentials/{username} {
+      allow read, write: if false;
+    }
+
+    match /bhw_login_attempts/{username} {
+      allow read, write: if false;
+    }
+
     // Clinical data.
     match /patients/{patientId} {
-      allow read: if signedInAndVerified();
-      allow create, update: if signedInAndVerified();
+      allow read: if signedInAndVerified() || ownsPatient(resource.data);
+
+      allow create: if signedInAndVerified()
+                    // A BHW registers patients for themselves, and they
+                    // arrive pending: approving your own registration
+                    // would make the nurse's review meaningless.
+                    || (isBhw()
+                        && request.resource.data.assignedBhwId == request.auth.uid
+                        && request.resource.data.status == 'pending');
+
+      allow update: if signedInAndVerified()
+                    // A BHW may correct their own patient's details but
+                    // cannot approve them or hand them to someone else.
+                    || (ownsPatient(resource.data)
+                        && request.resource.data.assignedBhwId == resource.data.assignedBhwId
+                        && request.resource.data.status == resource.data.status);
+
       allow delete: if isAdmin();
 
       match /{sub=**} {
@@ -107,8 +153,19 @@ service cloud.firestore {
     // writing a newer record, not erasing the history a risk score was
     // calculated from.
     match /health_records/{recordId} {
-      allow read: if signedInAndVerified();
-      allow create, update: if signedInAndVerified();
+      allow read: if signedInAndVerified()
+                  || (isBhw() && resource.data.bhwId == request.auth.uid);
+
+      // A record names the worker who took it, and a BHW may only file
+      // one under their own name - otherwise a visit could be attributed
+      // to a colleague who never made it.
+      allow create: if signedInAndVerified()
+                    || (isBhw() && request.resource.data.bhwId == request.auth.uid);
+
+      allow update: if signedInAndVerified();
+
+      // A reading is a clinical record. Correcting one means writing a
+      // newer record, not erasing the history a risk score came from.
       allow delete: if false;
     }
 

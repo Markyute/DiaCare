@@ -18,6 +18,7 @@ const {
   requireVerifiedAdmin,
 } = require('./_lib/core');
 const audit = require('./_lib/audit');
+const { setCredentials, removeCredentials } = require('./_lib/bhw-credentials');
 
 const ALL_ROLES = ['admin', 'nurse', 'bhw'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -127,14 +128,28 @@ module.exports = handle(async (req) => {
     updates.email = email;
   }
 
+  /* A BHW's password lives in bhw_credentials, not in Firebase Auth -
+     their sign-in is a username check, so setting an Auth password would
+     change nothing they use. */
+  const targetRole = updates.role || current.role;
+  const isBhw = targetRole === 'bhw';
+
   if (body.password) {
-    if (!isAuthAccount) {
-      throw new ApiError(400, 'This record has no dashboard login, so it has no password.');
-    }
     if (String(body.password).length < 6) {
       throw new ApiError(400, 'Password must be at least 6 characters.');
     }
-    authUpdates.password = String(body.password);
+    if (isBhw) {
+      await setCredentials(id, updates.username || current.username, body.password);
+    } else if (isAuthAccount) {
+      authUpdates.password = String(body.password);
+    } else {
+      throw new ApiError(400, 'This record has no login, so it has no password.');
+    }
+  } else if (isBhw && updates.username && updates.username !== current.username) {
+    /* A rename has to move the credential record, since the username is
+       its document id. Without the old password to re-hash, the admin
+       must set a new one. */
+    throw new ApiError(400, 'Changing a BHW username also needs a new password.');
   }
 
   /* ---- apply ---- */
@@ -165,6 +180,12 @@ module.exports = handle(async (req) => {
   if (isAuthAccount && updates.role && updates.role !== current.role) {
     await auth.setCustomUserClaims(id, { otpVerified: false, otpAt: 0, otpExp: 0 });
     await auth.revokeRefreshTokens(id);
+  }
+
+  /* The old username is a document id in bhw_credentials; leaving it
+     behind would keep the previous name working as a login. */
+  if (isBhw && updates.username && updates.username !== current.username && current.username) {
+    await removeCredentials(current.username);
   }
 
   await ref.update(updates);

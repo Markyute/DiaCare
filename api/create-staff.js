@@ -11,10 +11,12 @@
        dashboard. The document id is the Auth uid, which is what ties a
        signed-in token to its profile everywhere else in the system.
 
-     bhw — a roster record only. Barangay health workers sign into the
-       mobile app with a username, and Firebase Auth has no username
-       login, so no Auth account is created and these cannot reach the
-       dashboard. The document gets an auto-id instead of a uid.
+     bhw — signs into the mobile app with a username. Firebase Auth has
+       no username login, so the account is created with a uid and no
+       email, the password is kept in bhw_credentials, and /api/bhw-login
+       trades the two for a custom token. The document id is still the
+       Auth uid, so assignedBhwId on a patient is a uid everywhere and
+       the rules can compare it directly.
 
    Body: { fullName, role, email?, username?, password?, contact?,
            barangay?, purok?, mustChangePassword? }
@@ -29,6 +31,7 @@ const {
   requireVerifiedAdmin,
 } = require('./_lib/core');
 const audit = require('./_lib/audit');
+const { setCredentials } = require('./_lib/bhw-credentials');
 
 const DASHBOARD_ROLES = ['admin', 'nurse'];
 const ALL_ROLES = ['admin', 'nurse', 'bhw'];
@@ -91,25 +94,40 @@ module.exports = handle(async (req) => {
     if (username.length < 3) {
       throw new ApiError(400, 'Username is required for a BHW (at least 3 characters).');
     }
-    /* Usernames are how the mobile app will identify these people, so a
-       duplicate would be ambiguous the moment that login is built. */
-    const clash = await db.collection('users').where('username', '==', username).limit(1).get();
-    if (!clash.empty) {
-      throw new ApiError(409, 'That username is already taken.');
+    if (!password || String(password).length < 6) {
+      throw new ApiError(400, 'A temporary password is required (at least 6 characters).');
     }
 
-    const ref = db.collection('users').doc();
-    await ref.set({ ...profile, username, email: email || '' });
+    /* The uid is minted first so the credential record, the Auth
+       account, and the profile all agree on one identifier. */
+    const uid = db.collection('users').doc().id;
+
+    /* Firebase Auth allows an account with no email or password when
+       sign-in happens through a custom token, which is exactly this
+       case - the password is checked by /api/bhw-login, not by Firebase. */
+    await auth.createUser({ uid, displayName: fullName });
+
+    try {
+      /* Claims the username transactionally, so this throws rather than
+         silently overwriting if it is taken. */
+      await setCredentials(uid, username, password);
+    } catch (err) {
+      /* Do not leave an Auth account behind that nothing can sign into. */
+      await auth.deleteUser(uid).catch(() => {});
+      throw err;
+    }
+
+    await db.collection('users').doc(uid).set({ ...profile, username, email: email || '' });
 
     await audit.record({
       actorUid: caller.uid,
       action: 'STAFF_CREATED',
-      targetId: ref.id,
+      targetId: uid,
       targetName: fullName,
-      detail: 'BHW roster record, no dashboard login',
+      detail: 'BHW mobile app account, username ' + username,
     });
 
-    return { id: ref.id, role, hasLogin: false };
+    return { id: uid, role, hasLogin: true, signsInOn: 'app' };
   }
 
   /* ================================================================

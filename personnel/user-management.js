@@ -400,7 +400,7 @@ function updateCredentialFieldsForRole(role) {
   /* mustChangePassword is about a password. A BHW row stores none, so
      the checkbox is shown only where it means something. */
   const mustChangeGroup = document.getElementById('fMustChangeGroup');
-  if (mustChangeGroup) mustChangeGroup.style.display = isWebRole ? '' : 'none';
+  if (mustChangeGroup) mustChangeGroup.style.display = chosen ? '' : 'none';
 
   const emailGroup = document.getElementById('fEmailGroup');
   const emailRequiredMark = document.getElementById('fEmailRequiredMark');
@@ -420,11 +420,11 @@ function updateCredentialFieldsForRole(role) {
     }
   }
 
-  /* A BHW row stores no password, because no Firebase Auth account is
-     created for it. Showing the field would collect a credential that
-     is then thrown away. */
+  /* Every role that can sign in needs a password now — a BHW's is
+     checked by /api/bhw-login rather than by Firebase Auth, but it is
+     still a password they type. */
   const passwordGroup = document.getElementById('fPasswordGroup');
-  if (passwordGroup) passwordGroup.style.display = (chosen && isWebRole) ? '' : 'none';
+  if (passwordGroup) passwordGroup.style.display = chosen ? '' : 'none';
 
   const usernameGroup = document.getElementById('fUsernameGroup');
   const usernameRequiredMark = document.getElementById('fUsernameRequiredMark');
@@ -569,7 +569,7 @@ document.getElementById('modalSave')?.addEventListener('click', async () => {
   ];
   /* On an edit the password field means "change it to this", so blank
      is the normal case and only a non-empty value is checked. */
-  if (!editingId && isWebRole) {
+  if (!editingId) {
     checks.push({ id: 'fPassword', errId: 'errPassword', val: password, fn: v => v.length >= 6 });
   } else if (editingId && password) {
     checks.push({ id: 'fPassword', errId: 'errPassword', val: password, fn: v => v.length >= 6 });

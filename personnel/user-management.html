@@ -254,7 +254,12 @@
             <label class="mfield-label" for="fRole">Role <span class="required">*</span></label>
             <select class="mfield-input" id="fRole" title="Role">
               <option value="">Select role...</option>
-              <option value="admin">Super Admin</option>
+              <!-- Super Admin is deliberately absent. There is one, it is
+                   created by scripts/create-admin.js, and an account that
+                   can create and deactivate every other account should
+                   not be one dropdown away from an accidental click. The
+                   API still accepts the role, so promoting someone is a
+                   deliberate act rather than a form field. -->
               <option value="nurse">RHU Nurse</option>
               <option value="bhw">BHW</option>
             </select>
