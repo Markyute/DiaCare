@@ -51,7 +51,7 @@ function getDiacareNotifications() {
     .map(p => {
       const type = p.missedToday ? 'missed' : p.risk === 'critical' ? 'critical' : p.risk === 'warning' ? 'atrisk' : null;
       if (!type || acks[p.id]) return null;
-      return { type, name: p.name, trigger: buildTrigger(p), time: p.time };
+      return { id: p.id, type, name: p.name, trigger: buildTrigger(p), time: p.time };
     })
     .filter(Boolean);
 }
@@ -78,8 +78,13 @@ function renderTopNavNotifications() {
 
   listEl.innerHTML = notifications.map(n => {
     const meta = NOTIF_META[n.type] || NOTIF_META.critical;
+    /* Straight to the patient the alert is about, on the Health Records
+       tab — the reading that triggered it. Landing on a list of every
+       alert and making the nurse find the same person again was busywork
+       the link already had enough information to skip. */
+    const href = `../patient-monitoring/patient-monitoring.html?patient=${encodeURIComponent(n.id)}&tab=records`;
     return `
-    <a href="../alerts/high-risk.html" class="tn-notif-item">
+    <a href="${href}" class="tn-notif-item">
       <div class="tn-notif-icon tn-notif-icon--${meta.cls}"><i class="fa-solid ${meta.icon}"></i></div>
       <div class="tn-notif-text">
         <div class="tn-notif-title">${n.name} — ${n.trigger}</div>
@@ -104,3 +109,16 @@ function initNotifDropdown() {
     }
   });
 }
+
+/* ================================================================
+   STAY CURRENT
+
+   The roster arrives after this page has already rendered, and keeps
+   arriving — patients-data.js holds live Firestore subscriptions, so a
+   visit synced from a BHW's phone raises this event on every open
+   dashboard. Re-rendering here means the bell count is live everywhere
+   without each page having to remember to ask.
+   ================================================================ */
+window.addEventListener('diacare:patients-loaded', () => {
+  renderTopNavNotifications();
+});

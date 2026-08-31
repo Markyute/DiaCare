@@ -332,6 +332,12 @@ function populateBarangays() {
    knows exactly which patient the user wants, instead of dropping
    them on the unfiltered table to search again.
    ================================================================ */
+/* The roster loads after this page does, so applyUrlFilters runs once at
+   load (when ?patient= cannot be resolved yet) and again when the data
+   arrives. The guard is what stops the detail modal reopening on every
+   subsequent snapshot while the nurse is reading something else. */
+let deepLinkOpened = false;
+
 function applyUrlFilters() {
   const params = new URLSearchParams(window.location.search);
   const risk = params.get('risk');
@@ -353,9 +359,10 @@ function applyUrlFilters() {
     }
   }
 
-  if (patientId) {
+  if (patientId && !deepLinkOpened) {
     const patient = PATIENTS.find(p => p.id === patientId);
     if (patient) {
+      deepLinkOpened = true;
       openDetail(patient);
       // &tab= opens straight to the tab that's actually relevant to
       // wherever the link came from — Risk Analysis wants Trends (the
@@ -659,15 +666,28 @@ document.getElementById('detailModal')?.addEventListener('click', (e) => {
    unpersisted flag states. */
 document.getElementById('btnFlag')?.addEventListener('click', () => {
   if (!currentPatient) return;
-  window.DiaCarePatients?.setPatientFlag(currentPatient.id, !currentPatient.flagged);
+
+  /* The new state is decided here rather than read back off
+     currentPatient afterwards. setPatientFlag updates the object in the
+     roster, and currentPatient is only sometimes that same object — when
+     it is a copy, every line below would have described the old state.
+     Deciding once and using that value throughout removes the question. */
+  const newFlagged = !currentPatient.flagged;
+  window.DiaCarePatients?.setPatientFlag(currentPatient.id, newFlagged);
+  currentPatient.flagged = newFlagged;
+
   const flagBtn = document.getElementById('btnFlag');
   if (flagBtn) {
-    flagBtn.classList.toggle('flagged', currentPatient.flagged);
-    flagBtn.innerHTML = currentPatient.flagged
+    flagBtn.classList.toggle('flagged', newFlagged);
+    flagBtn.innerHTML = newFlagged
       ? '<i class="fa-solid fa-flag"></i> Flagged for Follow-up'
       : '<i class="fa-solid fa-flag"></i> Flag for Follow-up';
   }
-  showToast(currentPatient.flagged
+
+  /* The row's own flag indicator lives in the table, not the modal. */
+  renderTable();
+
+  showToast(newFlagged
     ? `${currentPatient.name} flagged for follow-up.`
     : `Flag removed for ${currentPatient.name}.`);
 });
@@ -880,5 +900,6 @@ window.addEventListener('diacare:patients-loaded', () => {
   renderStats();
   renderPendingApprovals();
   populateBarangays();
+  applyUrlFilters();
   renderTable();
 });

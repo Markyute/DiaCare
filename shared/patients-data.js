@@ -27,10 +27,9 @@
 import { db } from './firebase.js';
 import {
   collection,
-  getDocs,
+  onSnapshot,
   doc,
   addDoc,
-  setDoc,
   updateDoc,
   serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
@@ -48,6 +47,8 @@ import {
 /* Stable references — filled, never reassigned. See the note above. */
 const PATIENTS = [];
 const PENDING_PATIENTS = [];
+
+let loadError = null;
 
 /* Kept so a mutation can rebuild one patient's view without refetching
    the whole roster. */
@@ -76,25 +77,64 @@ function rebuild() {
   replaceContents(PENDING_PATIENTS, views.filter((p) => p.status === 'pending'));
 }
 
-async function load() {
-  const [patientSnap, recordSnap] = await Promise.all([
-    getDocs(collection(db, 'patients')),
-    getDocs(collection(db, 'health_records')),
-  ]);
+/* Live subscriptions rather than a one-off read. A BHW's phone syncing a
+   household visit, or another nurse approving a patient on their own
+   laptop, reaches every open dashboard within a second instead of on
+   the next refresh — which is the whole point of the bell being a live
+   count rather than a snapshot of whenever the page happened to load. */
+let seenPatients = false;
+let seenRecords = false;
+let firstLoad;
+const firstLoadDone = new Promise((resolve) => { firstLoad = resolve; });
 
-  rawPatients = new Map();
-  patientSnap.forEach((d) => rawPatients.set(d.id, d.data()));
+function maybeReady() {
+  if (seenPatients && seenRecords) firstLoad();
+}
 
-  rawRecords = new Map();
-  recordSnap.forEach((d) => {
-    const data = d.data();
-    const pid = data.patientId;
-    if (!pid) return;
-    if (!rawRecords.has(pid)) rawRecords.set(pid, []);
-    rawRecords.get(pid).push(recordToHistory(d.id, data));
-  });
+function subscribe() {
+  onSnapshot(
+    collection(db, 'patients'),
+    (snap) => {
+      rawPatients = new Map();
+      snap.forEach((d) => rawPatients.set(d.id, d.data()));
+      seenPatients = true;
+      rebuild();
+      maybeReady();
+      if (seenRecords) announce();
+    },
+    (err) => {
+      loadError = err;
+      console.error('Lost the patients subscription:', err);
+      seenPatients = true;
+      maybeReady();
+      announce();
+    }
+  );
 
-  rebuild();
+  onSnapshot(
+    collection(db, 'health_records'),
+    (snap) => {
+      rawRecords = new Map();
+      snap.forEach((d) => {
+        const data = d.data();
+        const pid = data.patientId;
+        if (!pid) return;
+        if (!rawRecords.has(pid)) rawRecords.set(pid, []);
+        rawRecords.get(pid).push(recordToHistory(d.id, data));
+      });
+      seenRecords = true;
+      rebuild();
+      maybeReady();
+      if (seenPatients) announce();
+    },
+    (err) => {
+      loadError = err;
+      console.error('Lost the health records subscription:', err);
+      seenRecords = true;
+      maybeReady();
+      announce();
+    }
+  );
 }
 
 function announce() {
@@ -103,28 +143,20 @@ function announce() {
   }));
 }
 
-/* Resolves once, whether or not the load succeeded — a page that awaits
-   this should still render, empty, rather than hang. The failure is
-   surfaced on the object so a page can say so. */
-let loadError = null;
+/* Resolves once both collections have reported, whether or not they
+   succeeded — a page awaiting this should render empty rather than
+   hang. The failure is surfaced on the object so a page can say so. */
+subscribe();
 
-const ready = load()
-  .then(() => { announce(); })
-  .catch((err) => {
-    loadError = err;
-    console.error('Could not load patients from Firestore:', err);
-    announce();
-  });
+const ready = firstLoadDone.then(() => {
+  announce();
+});
 
-/* Pull fresh data after a write, so a second page showing the same
-   roster is not left stale. */
+/* Kept for callers that ask for a refresh explicitly. The snapshots
+   already keep this current, so there is nothing to re-fetch — just
+   re-render from what has arrived. */
 async function refresh() {
-  try {
-    await load();
-  } catch (err) {
-    loadError = err;
-    console.error('Could not refresh patients:', err);
-  }
+  rebuild();
   announce();
 }
 
