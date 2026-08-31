@@ -4,10 +4,12 @@
    buttons, modal chrome, and toast all live in ../shared/theme.css
    ================================================================ */
 
-/* Hero band height — tuned to sit behind the page title and dip
-   slightly into the top of the form/side panels below it. */
+/* Hero band height — the page header sits on a white card
+   (.page-hdr--card below), so the band only needs to reach far enough
+   to sit behind it. At the old 130px it ended mid-card, which read as a
+   stray green stripe across the panels underneath. */
 .content {
-  --hero-h: 130px;
+  --hero-h: 96px;
 }
 
 /* ── Page Header ── */
@@ -824,4 +826,27 @@
 
 .custom-select-list li.no-results:hover {
   background: transparent;
+}
+
+/* ── Page header on a card ──
+   The header sits over the dark green hero band, where .page-title is
+   white by design. Lifting it onto a white card means those colours
+   have to be undone locally, or the title turns white-on-white.
+
+   The card is raised rather than flat so it reads as sitting on the
+   band. The band's height is set at the top of this file to match. */
+.page-hdr--card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 22px;
+  box-shadow: 0 10px 28px rgba(4, 20, 12, .14);
+}
+
+.page-hdr--card .page-title {
+  color: var(--ink);
+}
+
+.page-hdr--card .page-sub {
+  color: var(--ink-soft);
 }

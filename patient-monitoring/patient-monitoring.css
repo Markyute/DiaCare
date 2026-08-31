@@ -975,3 +975,43 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ── Encode New Patient ──
+   Sits in the page header, which is over the dark green hero band. The
+   class was on the markup but styled nowhere, so it rendered as a bare
+   link in default link colour on that band and was effectively
+   invisible. Filled white to match Export CSV beside it — the two are
+   peers in the header, and an outline button would disappear against
+   the gradient the same way. */
+.btn-encode {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: var(--white);
+  border: 1px solid transparent;
+  color: var(--brand-700);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: all .2s;
+}
+
+.btn-encode:hover {
+  background: var(--bg-alt);
+  color: var(--brand-800, var(--brand-700));
+  transform: translateY(-1px);
+}
+
+.btn-encode:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-encode { transition: none; }
+  .btn-encode:hover { transform: none; }
+}
