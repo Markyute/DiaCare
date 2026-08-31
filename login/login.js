@@ -347,8 +347,17 @@ tfaForm?.addEventListener('submit', async (e) => {
 
   /* The claims were just set on the account, but this tab still holds
      the token minted before them. Force a refresh, or the dashboard's
-     first read arrives with a token the rules reject. */
-  await auth.currentUser?.getIdToken(true);
+     first read arrives with a token the rules reject.
+
+     A failure here is not fatal: auth-guard refreshes again before it
+     turns anyone away. Letting it throw would strand the operator on a
+     spinning button after the code they were asked for had already been
+     accepted. */
+  try {
+    await auth.currentUser?.getIdToken(true);
+  } catch (err) {
+    console.debug('Could not refresh the token after verification:', err?.code || err);
+  }
 
   setBtnLoading('btnTfaSubmit', 'tfaBtnSpinner', 'tfaBtnLabel', false);
   window.location.href = '../dashboard/dashboard.html';

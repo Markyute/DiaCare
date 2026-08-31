@@ -93,11 +93,9 @@ export const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 /* A signed-in user is not an authorized one — the emailed code has to
    have been verified, and recently. Both the rules and this check test
    the same claim so the UI and the data layer can't disagree. */
-export async function hasVerifiedSession(user) {
-  if (!user) return false;
-  const token = await getIdTokenResult(user);
-  const claims = token.claims || {};
-  if (claims.otpVerified !== true) return false;
+function claimsAreValid(claims) {
+  if (!claims || claims.otpVerified !== true) return false;
+
   /* Prefer the stamped expiry: it already accounts for whether the user
      asked to stay signed in. Deriving it from otpAt here would mean
      re-deciding that, and getting it wrong for anyone who ticked the
@@ -107,4 +105,31 @@ export async function hasVerifiedSession(user) {
 
   const at = Number(claims.otpAt || 0);
   return at > 0 && Date.now() - at < SESSION_TTL_MS;
+}
+
+export async function hasVerifiedSession(user) {
+  if (!user) return false;
+
+  const cached = await getIdTokenResult(user);
+  if (claimsAreValid(cached.claims)) return true;
+
+  /* The cached token can legitimately predate the claims. Verifying the
+     emailed code sets them on the account, and the token holding them is
+     minted moments later - so the page opened straight afterwards can
+     still be reading the token persisted before verification, which
+     carries none of them.
+
+     That looked like signing in, landing on the dashboard, and being
+     thrown back to the login screen. One forced refresh settles it. The
+     same refresh picks up a role change or a revoked session, so it is
+     worth the round trip before turning anyone away. */
+  try {
+    const fresh = await getIdTokenResult(user, true);
+    return claimsAreValid(fresh.claims);
+  } catch (err) {
+    /* Offline, or the token was revoked server-side. Either way this is
+       not a session that can be trusted. */
+    console.debug('Could not refresh the session token:', err?.code || err);
+    return false;
+  }
 }
