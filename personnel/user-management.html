@@ -209,6 +209,26 @@
         </div>
       </div>
 
+      <!-- SYSTEM ACTIVITY
+           Lives here rather than on the dashboard: it is a record of
+           changes to these accounts, so it belongs under the roster it
+           describes. The whole page is already Super Admin only - the
+           auth-guard meta above, plus firestore.rules refusing the
+           audit_log read to anyone else. -->
+      <div class="activity-card" id="activityCard" hidden>
+        <div class="activity-hdr">
+          <div>
+            <div class="activity-title">
+              <i class="fa-solid fa-clock-rotate-left"></i> System Activity
+            </div>
+            <div class="activity-sub">Who changed what, most recent first</div>
+          </div>
+        </div>
+        <div id="activityList" class="activity-list">
+          <div class="activity-empty">Loading recent activity...</div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -330,6 +350,7 @@
   <script src="../shared/profile.js"></script>
   <script type="module" src="../shared/session.js"></script>
   <script type="module" src="../shared/logout-confirm.js"></script>
+  <script type="module" src="../shared/activity-feed.js"></script>
   <script type="module" src="user-management.js"></script>
 </body>
 
