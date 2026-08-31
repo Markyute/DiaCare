@@ -33,17 +33,29 @@ document.addEventListener('click', (e) => {
    formula this page used to keep locally, so counts here agree with
    Dashboard, Patient Monitoring, Reports, and Alerts.
    ================================================================ */
-const SCORED = (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [])
-  .map(p => ({ ...p, avgGlucose: p.glucose, level: p.risk }))
-  .sort((a, b) => b.score - a.score);
+let SCORED = [];
+
+/* Both lists come off the same roster, so they are rebuilt together —
+   recomputing one without the other would leave the table and the
+   barangay chart describing different populations. */
+function rebuildDerived() {
+  const roster = window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [];
+
+  SCORED = roster
+    .map(p => ({ ...p, avgGlucose: p.glucose, level: p.risk }))
+    .sort((a, b) => b.riskScore - a.riskScore);
+
+  BARANGAY_RISK = (window.DiaCarePatients ? window.DiaCarePatients.getBarangaySummary() : [])
+    .filter(b => b.patients > 0)
+    .sort((a, b) => (b.highRisk + b.atRisk) - (a.highRisk + a.atRisk));
+}
 
 /* ================================================================
    BARANGAY DATA — derived from the same roster instead of an
    independent hardcoded list.
    ================================================================ */
-const BARANGAY_RISK = (window.DiaCarePatients ? window.DiaCarePatients.getBarangaySummary() : [])
-  .filter(b => b.patients > 0)
-  .sort((a, b) => (b.highRisk + b.atRisk) - (a.highRisk + a.atRisk));
+let BARANGAY_RISK = [];
+rebuildDerived();
 
 /* ================================================================
    STATE
@@ -303,4 +315,29 @@ let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(drawBarangayChart, 200);
+});
+
+/* ================================================================
+   ROSTER ARRIVAL
+
+   patients-data.js loads from Firestore asynchronously, so this page
+   parses and renders before any patient exists. Values derived from the
+   roster are recomputed here and the page re-rendered once the data
+   lands.
+
+   Only render functions are called — the init/bind helpers already ran
+   at load, and running them again would attach a second set of
+   listeners to the same controls.
+   ================================================================ */
+
+function recomputeFromRoster() {
+  rebuildDerived();
+}
+
+window.addEventListener('diacare:patients-loaded', () => {
+  recomputeFromRoster();
+  renderStats();
+  renderTable();
+  drawDonut();
+  drawBarangayChart();
 });

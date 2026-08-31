@@ -62,10 +62,7 @@ const DAY_LABELS = getLast30Days();
    specific "average glucose by barangay" comparison chart mostly empty
    bars; the full-coverage picture (including zero-patient barangays)
    already lives in Reports and Risk Analysis. */
-const BARANGAY_DATA = (window.DiaCarePatients ? window.DiaCarePatients.getBarangaySummary() : [])
-  .filter(b => b.patients > 0)
-  .map(b => ({ name: b.name, avg: b.avgGlucose, patients: b.patients }))
-  .sort((a, b) => b.avg - a.avg);
+let BARANGAY_DATA = [];
 
 /* Frequency by time of day */
 const FREQ_DATA = [
@@ -83,14 +80,25 @@ const FREQ_DATA = [
    the shared roster (e.g. Ana Reyes shown here as "Binitayan" but
    "San Jose" everywhere else) and even referenced barangays that don't
    exist anywhere in Libon's actual barangay list. */
-const TOP_PATIENTS = (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [])
-  .filter(p => p.glucose) // exclude approved patients with no reading logged yet
-  .map(p => ({
-    name: p.name, initials: p.initials, color: p.color,
-    barangay: p.barangay, avg: p.glucose, risk: p.risk,
-  }))
-  .sort((a, b) => b.avg - a.avg)
-  .slice(0, 5);
+let TOP_PATIENTS = [];
+
+/* Both lists come off the same roster, so they are rebuilt together. */
+function rebuildDerived() {
+  BARANGAY_DATA = (window.DiaCarePatients ? window.DiaCarePatients.getBarangaySummary() : [])
+    .filter(b => b.patients > 0)
+    .map(b => ({ name: b.name, avg: b.avgGlucose, patients: b.patients }))
+    .sort((a, b) => b.avg - a.avg);
+
+  TOP_PATIENTS = (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [])
+    .filter(p => p.glucose) // exclude approved patients with no reading logged yet
+    .map(p => ({
+      name: p.name, initials: p.initials, color: p.color,
+      barangay: p.barangay, avg: p.glucose, risk: p.risk,
+    }))
+    .sort((a, b) => b.avg - a.avg)
+    .slice(0, 5);
+}
+rebuildDerived();
 
 /* ================================================================
    POPULATION TREND LINE CHART
@@ -378,4 +386,30 @@ window.addEventListener('resize', () => {
     drawDonut();
     drawBarangayChart();
   }, 200);
+});
+
+/* ================================================================
+   ROSTER ARRIVAL
+
+   patients-data.js loads from Firestore asynchronously, so this page
+   parses and renders before any patient exists. Values derived from the
+   roster are recomputed here and the page re-rendered once the data
+   lands.
+
+   Only render functions are called — the init/bind helpers already ran
+   at load, and running them again would attach a second set of
+   listeners to the same controls.
+   ================================================================ */
+
+function recomputeFromRoster() {
+  rebuildDerived();
+}
+
+window.addEventListener('diacare:patients-loaded', () => {
+  recomputeFromRoster();
+  renderFreqGrid();
+  renderTopPatients();
+  drawTrendChart();
+  drawDonut();
+  drawBarangayChart();
 });

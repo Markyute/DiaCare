@@ -38,7 +38,7 @@ document.addEventListener('click', (e) => {
    so Total Patients / risk counts here agree with Dashboard, Reports,
    Alerts, and Risk Analysis instead of using an independent list.
    ================================================================ */
-const PATIENTS = window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [];
+let PATIENTS = window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [];
 
 /* ================================================================
    STAT RIBBON — counts against the full roster, unaffected by the
@@ -856,4 +856,29 @@ window.addEventListener('resize', () => {
     const trendsVisible = !document.querySelector('.ptab-panel[data-panel="trends"]')?.classList.contains('hidden');
     if (currentPatient && trendsVisible) drawTrendCharts(currentPatient);
   }, 200);
+});
+
+/* ================================================================
+   ROSTER ARRIVAL
+
+   patients-data.js loads from Firestore asynchronously, so this page
+   parses and renders before any patient exists. Values derived from the
+   roster are recomputed here and the page re-rendered once the data
+   lands.
+
+   Only render functions are called — the init/bind helpers already ran
+   at load, and running them again would attach a second set of
+   listeners to the same controls.
+   ================================================================ */
+
+function recomputeFromRoster() {
+  PATIENTS = window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [];
+}
+
+window.addEventListener('diacare:patients-loaded', () => {
+  recomputeFromRoster();
+  renderStats();
+  renderPendingApprovals();
+  populateBarangays();
+  renderTable();
 });

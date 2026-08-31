@@ -35,9 +35,9 @@ document.addEventListener('click', (e) => {
    Monitoring, Alerts, and Risk Analysis instead of independent
    hardcoded numbers.
    ================================================================ */
-const BARANGAY_DATA = window.DiaCarePatients ? window.DiaCarePatients.getBarangaySummary() : [];
+let BARANGAY_DATA = window.DiaCarePatients ? window.DiaCarePatients.getBarangaySummary() : [];
 
-const PATIENT_DATA = (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : []).map(p => ({
+let PATIENT_DATA = (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : []).map(p => ({
   ...p,
   avgGlucose: p.glucose,
   readings: p.visitCount,
@@ -495,6 +495,35 @@ function showToast(msg, isError) {
 window.addEventListener('load', () => {
   renderTopNavNotifications();
   initNotifDropdown();
+  updatePrintMeta();
+  switchView();
+});
+
+/* ================================================================
+   ROSTER ARRIVAL
+
+   patients-data.js loads from Firestore asynchronously, so this page
+   parses and renders before any patient exists. Values derived from the
+   roster are recomputed here and the page re-rendered once the data
+   lands.
+
+   Only render functions are called — the init/bind helpers already ran
+   at load, and running them again would attach a second set of
+   listeners to the same controls.
+   ================================================================ */
+
+function recomputeFromRoster() {
+  BARANGAY_DATA = window.DiaCarePatients ? window.DiaCarePatients.getBarangaySummary() : [];
+  PATIENT_DATA = (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : []).map(p => ({
+    ...p,
+    avgGlucose: p.glucose,
+    readings: p.visitCount,
+  }));
+}
+
+window.addEventListener('diacare:patients-loaded', () => {
+  recomputeFromRoster();
+  publishPlatformStats();
   updatePrintMeta();
   switchView();
 });

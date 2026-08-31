@@ -59,6 +59,20 @@ service cloud.firestore {
       }
     }
 
+    // Visit readings. Written by this dashboard's encoding page and, once
+    // the mobile sync lands, pushed by the BHW app. Kept as a top-level
+    // collection rather than a subcollection so a sync can ask for
+    // everything changed since a timestamp in one query.
+    //
+    // No delete: a reading is a clinical record. Correcting one means
+    // writing a newer record, not erasing the history a risk score was
+    // calculated from.
+    match /health_records/{recordId} {
+      allow read: if signedInAndVerified();
+      allow create, update: if signedInAndVerified();
+      allow delete: if false;
+    }
+
     match /alerts/{alertId} {
       allow read: if signedInAndVerified();
       allow write: if signedInAndVerified();

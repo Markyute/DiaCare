@@ -69,7 +69,8 @@ function saveAcks(map) {
 
 const ACKS = loadAcks();
 
-const ALERTS = (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [])
+function buildAlerts() {
+  return (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [])
   .map((p, i) => {
     const type = p.missedToday ? 'missed' : p.risk === 'critical' ? 'critical' : p.risk === 'warning' ? 'atrisk' : null;
     if (!type) return null;
@@ -86,6 +87,9 @@ const ALERTS = (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [])
     };
   })
   .filter(Boolean);
+}
+
+let ALERTS = buildAlerts();
 
 /* ================================================================
    STATE
@@ -424,6 +428,29 @@ function showToast(msg, isError = false) {
    INIT
    ================================================================ */
 window.addEventListener('load', () => {
+  renderStats();
+  renderList();
+});
+
+/* ================================================================
+   ROSTER ARRIVAL
+
+   patients-data.js loads from Firestore asynchronously, so this page
+   parses and renders before any patient exists. Values derived from the
+   roster are recomputed here and the page re-rendered once the data
+   lands.
+
+   Only render functions are called — the init/bind helpers already ran
+   at load, and running them again would attach a second set of
+   listeners to the same controls.
+   ================================================================ */
+
+function recomputeFromRoster() {
+  ALERTS = buildAlerts();
+}
+
+window.addEventListener('diacare:patients-loaded', () => {
+  recomputeFromRoster();
   renderStats();
   renderList();
 });
