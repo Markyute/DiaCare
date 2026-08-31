@@ -117,9 +117,20 @@ service cloud.firestore {
       allow write: if signedInAndVerified();
     }
 
+    // Append-only. Staff changes are written by the API with the Admin
+    // SDK; patient work is written by the browser that performed it,
+    // because the dashboard writes patients and health_records directly
+    // and the server never sees those.
+    //
+    // actorUid must equal the caller's own uid, so an entry can only be
+    // recorded in the name of whoever wrote it. No update and no delete
+    // from anywhere, so nothing here can be revised or erased afterwards
+    // - including by the person it describes.
     match /audit_log/{entryId} {
       allow read: if isAdmin();
-      allow write: if false;
+      allow create: if signedInAndVerified()
+                    && request.resource.data.actorUid == request.auth.uid;
+      allow update, delete: if false;
     }
 
     // Anything not named above is denied.

@@ -34,6 +34,7 @@ import {
   serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
+import { recordActivity } from './audit-client.js';
 import {
   BARANGAYS,
   calcScore,
@@ -223,6 +224,12 @@ function setPatientFlag(patientId, flagged, meta) {
     updatedAt: serverTimestamp(),
   }).catch((err) => console.error('Could not save the flag:', err));
 
+  recordActivity(flagged ? 'PATIENT_FLAGGED' : 'PATIENT_UNFLAGGED', {
+    targetId: patientId,
+    targetName: patient?.name || '',
+    detail: flagged ? (meta?.reason || '') : '',
+  });
+
   return patient;
 }
 
@@ -240,6 +247,8 @@ function approvePatient(id) {
     status: 'approved',
     updatedAt: serverTimestamp(),
   }).catch((err) => console.error('Could not approve the patient:', err));
+
+  recordActivity('PATIENT_APPROVED', { targetId: id, targetName: stored ? [stored.firstName, stored.lastName].filter(Boolean).join(' ') : '' });
 }
 
 function rejectPatient(id) {
@@ -255,6 +264,8 @@ function rejectPatient(id) {
     status: 'inactive',
     updatedAt: serverTimestamp(),
   }).catch((err) => console.error('Could not reject the patient:', err));
+
+  recordActivity('PATIENT_REJECTED', { targetId: id, targetName: stored ? [stored.firstName, stored.lastName].filter(Boolean).join(' ') : '' });
 }
 
 /* Called by the encoding page. That form collects a single "name" and
@@ -325,6 +336,12 @@ async function addEncodedPatient(patient) {
   rawPatients.set(ref.id, payload);
   rawRecords.set(ref.id, []);
 
+  recordActivity('PATIENT_CREATED', {
+    targetId: ref.id,
+    targetName: [payload.firstName, payload.lastName].filter(Boolean).join(' '),
+    detail: payload.barangay ? 'Barangay ' + payload.barangay : '',
+  });
+
   /* The reading entered alongside a new patient is a visit like any
      other. Writing it as a health record is what puts it in their
      Reading History instead of leaving it as current vitals with
@@ -378,6 +395,13 @@ async function addVisitToPatient(patientId, visit) {
   };
 
   const ref = await addDoc(collection(db, 'health_records'), payload);
+
+  const subject = rawPatients.get(patientId);
+  recordActivity('VISIT_RECORDED', {
+    targetId: patientId,
+    targetName: subject ? [subject.firstName, subject.lastName].filter(Boolean).join(' ') : '',
+    detail: payload.bloodGlucose ? 'Glucose ' + payload.bloodGlucose + ' mg/dL' : '',
+  });
 
   if (!rawRecords.has(patientId)) rawRecords.set(patientId, []);
   rawRecords.get(patientId).push(recordToHistory(ref.id, payload));

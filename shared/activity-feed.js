@@ -2,9 +2,13 @@
    DiaCare — System Activity feed
 
    The Super Admin's record of who changed what. Reads audit_log, which
-   only the API writes to: firestore.rules allows no write from a
-   browser at all, and no update or delete from anywhere, so an entry
-   cannot be edited away by the person it describes.
+   is appended to from two places: the API writes staff changes with the
+   Admin SDK, and the dashboard writes its own patient work, because
+   those documents never pass through the server.
+
+   Either way an entry is fixed once written — the rules allow no update
+   and no delete from anywhere, and a browser may only append in its own
+   name — so nothing here can be revised by the person it describes.
 
    Live, because the useful question is usually "what just happened".
    ================================================================ */
@@ -22,9 +26,15 @@ const MAX_ENTRIES = 25;
 
 /* Actions that take access away read differently from ones that grant
    it, and are the ones worth spotting in a scan. */
-const DANGER_ACTIONS = new Set(['STAFF_DEACTIVATED']);
+const DANGER_ACTIONS = new Set(['STAFF_DEACTIVATED', 'PATIENT_REJECTED']);
 
 const ACTION_ICONS = {
+  PATIENT_CREATED: 'fa-user-injured',
+  VISIT_RECORDED: 'fa-notes-medical',
+  PATIENT_FLAGGED: 'fa-flag',
+  PATIENT_UNFLAGGED: 'fa-flag',
+  PATIENT_APPROVED: 'fa-circle-check',
+  PATIENT_REJECTED: 'fa-circle-xmark',
   STAFF_CREATED: 'fa-user-plus',
   STAFF_UPDATED: 'fa-user-pen',
   STAFF_ACTIVATED: 'fa-user-check',
@@ -62,7 +72,7 @@ function render(entries) {
 
   if (!entries.length) {
     listEl.innerHTML = '<div class="activity-empty">No changes recorded yet. '
-      + 'Account changes made from Personnel will appear here.</div>';
+      + 'Account changes, patient registrations, and recorded visits will appear here.</div>';
     return;
   }
 
