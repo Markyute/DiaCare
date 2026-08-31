@@ -259,6 +259,10 @@
               <option value="bhw">BHW</option>
             </select>
             <div class="mfield-error hidden" id="errRole">Role is required.</div>
+            <!-- Which credentials an account needs depends entirely on the
+                 role, so the form says so instead of guessing. -->
+            <div class="mfield-hint" id="fRolePrompt">Pick a role — it decides whether this
+              account signs in with an email or a username.</div>
           </div>
           <div class="mfield-group" id="fStatusGroup">
             <label class="mfield-label" for="fStatus">Status</label>
@@ -301,7 +305,7 @@
             <label class="mfield-label" for="fPurok">Purok</label>
             <input class="mfield-input" type="text" id="fPurok" placeholder="e.g. Purok 3" title="Purok" />
           </div>
-          <div class="mfield-group mfield-span2">
+          <div class="mfield-group mfield-span2" id="fMustChangeGroup">
             <label class="mfield-checkbox-row" for="fMustChangePassword">
               <input type="checkbox" id="fMustChangePassword" checked />
               <span>Require password change on first login</span>

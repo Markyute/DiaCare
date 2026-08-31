@@ -386,14 +386,28 @@ document.getElementById('btnClearFilters')?.addEventListener('click', clearFilte
    that particular account would never actually use to sign in.
    ================================================================ */
 function updateCredentialFieldsForRole(role) {
+  /* Three states, not two. Before a role is picked the form cannot know
+     which credentials the account needs, and defaulting to "not a
+     dashboard role" made an unanswered question look like a decided one:
+     the modal opened showing the BHW username field, next to a checkbox
+     about a temporary password that was not on screen. */
+  const chosen = !!role;
   const isWebRole = DASHBOARD_ROLES.includes(role);
+
+  const prompt = document.getElementById('fRolePrompt');
+  if (prompt) prompt.style.display = chosen ? 'none' : '';
+
+  /* mustChangePassword is about a password. A BHW row stores none, so
+     the checkbox is shown only where it means something. */
+  const mustChangeGroup = document.getElementById('fMustChangeGroup');
+  if (mustChangeGroup) mustChangeGroup.style.display = isWebRole ? '' : 'none';
 
   const emailGroup = document.getElementById('fEmailGroup');
   const emailRequiredMark = document.getElementById('fEmailRequiredMark');
   const emailHint = document.getElementById('fEmailHint');
   const emailInput = document.getElementById('fEmail');
   if (emailGroup) {
-    emailGroup.style.display = isWebRole ? '' : 'none';
+    emailGroup.style.display = (chosen && isWebRole) ? '' : 'none';
     if (emailRequiredMark) emailRequiredMark.textContent = isWebRole ? '*' : '';
     if (emailHint) {
       emailHint.textContent = isWebRole
@@ -410,14 +424,14 @@ function updateCredentialFieldsForRole(role) {
      created for it. Showing the field would collect a credential that
      is then thrown away. */
   const passwordGroup = document.getElementById('fPasswordGroup');
-  if (passwordGroup) passwordGroup.style.display = isWebRole ? '' : 'none';
+  if (passwordGroup) passwordGroup.style.display = (chosen && isWebRole) ? '' : 'none';
 
   const usernameGroup = document.getElementById('fUsernameGroup');
   const usernameRequiredMark = document.getElementById('fUsernameRequiredMark');
   const usernameHint = document.getElementById('fUsernameHint');
   const usernameInput = document.getElementById('fUsername');
   if (usernameGroup) {
-    usernameGroup.style.display = isWebRole ? 'none' : '';
+    usernameGroup.style.display = (chosen && !isWebRole) ? '' : 'none';
     if (usernameRequiredMark) usernameRequiredMark.textContent = isWebRole ? '' : '*';
     if (usernameHint) {
       usernameHint.textContent = isWebRole
