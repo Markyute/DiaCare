@@ -37,6 +37,27 @@ const COOLDOWN_MS = 60 * 1000;
 
 const SITE_URL = 'https://diacare-dashboard.vercel.app';
 const LOGIN_URL = SITE_URL + '/login/login.html';
+const RESET_PAGE = SITE_URL + '/reset/reset.html';
+
+/* generatePasswordResetLink returns a link to Firebase's own hosted
+   handler, which carries Google's styling on a firebaseapp.com URL —
+   exactly the sort of page people are told not to type a password into.
+   The oobCode is the whole credential, so moving it onto the dashboard's
+   own reset page changes nothing about how it is redeemed; reset.js
+   calls verifyPasswordResetCode and confirmPasswordReset itself.
+
+   If the link ever comes back in a shape this cannot read, the original
+   is used rather than sending a broken one. */
+function toDashboardResetPage(firebaseLink) {
+  try {
+    const code = new URL(firebaseLink).searchParams.get('oobCode');
+    if (!code) return firebaseLink;
+    return RESET_PAGE + '?mode=resetPassword&oobCode=' + encodeURIComponent(code);
+  } catch (err) {
+    console.warn('Could not rewrite the reset link; sending the default handler.');
+    return firebaseLink;
+  }
+}
 
 /* The throttle document is keyed by a hash rather than the address, so
    the collection isn't a readable list of who has asked to reset. */
@@ -130,7 +151,7 @@ module.exports = handle(async (req) => {
     }
   }
 
-  const message = resetEmail(displayName, link);
+  const message = resetEmail(displayName, toDashboardResetPage(link));
   try {
     const { transport, from } = mailer();
     await transport.sendMail({

@@ -1,0 +1,85 @@
+/* ================================================================
+   DiaCare — Reset Password
+   Additions only. The page loads login.css first and reuses its shell,
+   fields, buttons, and tokens, so the two screens stay identical
+   without a second copy of the design to keep in sync.
+   ================================================================ */
+
+/* Spinner shown while the link is being verified. login.css sizes
+   .spinner for a button; this centres a larger one in the column. */
+.reset-checking {
+  display: flex;
+  justify-content: center;
+  padding: 28px 0 8px;
+}
+
+.reset-checking .spinner {
+  width: 26px;
+  height: 26px;
+  border-width: 3px;
+  border-top-color: var(--brand);
+}
+
+/* ================================================================
+   PASSWORD REQUIREMENTS
+
+   Shown from the start and ticked as they are met, rather than fired
+   as errors after a failed submit — the rules are then never a
+   surprise, and the person is not guessing what the form wants.
+   ================================================================ */
+.pwd-rules {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pwd-rules li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  transition: color .18s ease;
+}
+
+.pwd-rules li i {
+  font-size: 12px;
+  width: 13px;
+  text-align: center;
+  color: var(--card-border);
+  transition: color .18s ease;
+}
+
+.pwd-rules li.met {
+  color: var(--brand-dark);
+}
+
+.pwd-rules li.met i {
+  color: var(--brand);
+}
+
+/* Colour alone would carry the met/unmet state, so the icon swaps from
+   an empty circle to a check as well. */
+@media (prefers-reduced-motion: reduce) {
+
+  .pwd-rules li,
+  .pwd-rules li i {
+    transition: none;
+  }
+}
+
+/* ================================================================
+   INVALID-LINK STATE
+
+   .success-icon is green because every other use of it is a success.
+   An expired link is not a failure the person caused, so this is amber
+   rather than red — it asks them to request another, it does not
+   report that something went wrong.
+   ================================================================ */
+.success-icon--warn {
+  background: rgba(232, 163, 61, .16);
+  color: #9A6516;
+}

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiaCare — Set a New Password</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <!-- Same stylesheet as the login page rather than a copy of it, so the
+       two screens cannot drift apart. reset.css only adds the checklist. -->
+  <link rel="stylesheet" href="../login/login.css" />
+  <link rel="stylesheet" href="reset.css" />
+</head>
+
+<body>
+
+  <div class="auth-shell">
+
+    <!-- LEFT — FORM PANEL -->
+    <div class="auth-left">
+      <div class="auth-left-scroll">
+        <div class="auth-left-inner">
+
+          <!-- ══════════ CHECKING THE LINK ══════════ -->
+          <div id="screenChecking">
+
+            <div class="brand-mark">
+              <img src="../images/diacare-logo-new.png" class="brand-mark-icon" alt="DiaCare" />
+              <span class="brand-mark-text"><span class="bm-dia">Dia</span><span class="bm-care">Care</span></span>
+            </div>
+
+            <h1 class="auth-title">Checking your link</h1>
+            <p class="auth-sub">One moment while we verify this reset link is still valid.</p>
+
+            <div class="reset-checking">
+              <span class="spinner" aria-hidden="true"></span>
+            </div>
+          </div><!-- /screenChecking -->
+
+          <!-- ══════════ SET A NEW PASSWORD ══════════ -->
+          <div id="screenSetPassword" class="hidden">
+
+            <div class="brand-mark">
+              <img src="../images/diacare-logo-new.png" class="brand-mark-icon" alt="DiaCare" />
+              <span class="brand-mark-text"><span class="bm-dia">Dia</span><span class="bm-care">Care</span></span>
+            </div>
+
+            <h1 class="auth-title">Set a new password</h1>
+            <p class="auth-sub">Choose a new password for <strong id="resetEmailTarget">your account</strong>.</p>
+
+            <div class="alert-box hidden" id="resetAlert" role="alert" aria-live="polite">
+              <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+              <span id="resetAlertText"></span>
+            </div>
+
+            <form id="resetForm" novalidate>
+
+              <!-- New password -->
+              <div class="field-group">
+                <label class="field-label" for="newPassword">New password</label>
+                <div class="field-wrap">
+                  <i class="fa-solid fa-lock field-icon" aria-hidden="true"></i>
+                  <input id="newPassword" class="field-input field-input--pwd" type="password"
+                    placeholder="Enter a new password" autocomplete="new-password" maxlength="128" required />
+                  <button id="pwdToggle" class="pwd-toggle" type="button" aria-label="Show password"
+                    title="Show password">
+                    <i class="fa-regular fa-eye" id="pwdEye" aria-hidden="true"></i>
+                  </button>
+                </div>
+
+                <!-- Live requirements. Shown up front rather than as errors
+                     after a failed submit, so the rules are never a surprise. -->
+                <ul class="pwd-rules" id="pwdRules" aria-live="polite">
+                  <li id="ruleLength"><i class="fa-regular fa-circle" aria-hidden="true"></i> At least 8 characters</li>
+                  <li id="ruleLetter"><i class="fa-regular fa-circle" aria-hidden="true"></i> Contains a letter</li>
+                  <li id="ruleNumber"><i class="fa-regular fa-circle" aria-hidden="true"></i> Contains a number</li>
+                </ul>
+              </div>
+
+              <!-- Confirm -->
+              <div class="field-group">
+                <label class="field-label" for="confirmPassword">Confirm new password</label>
+                <div class="field-wrap">
+                  <i class="fa-solid fa-lock field-icon" aria-hidden="true"></i>
+                  <input id="confirmPassword" class="field-input field-input--pwd" type="password"
+                    placeholder="Type it again" autocomplete="new-password" maxlength="128" required />
+                  <button id="confirmToggle" class="pwd-toggle" type="button" aria-label="Show password"
+                    title="Show password">
+                    <i class="fa-regular fa-eye" id="confirmEye" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <div class="field-error hidden" id="errConfirm" role="alert">
+                  <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                  <span id="errConfirmText">Those passwords do not match</span>
+                </div>
+              </div>
+
+              <button id="btnResetSubmit" class="btn-submit" type="submit">
+                <span class="spinner hidden" id="resetBtnSpinner"></span>
+                <span id="resetBtnLabel" class="btn-label">
+                  <i class="fa-solid fa-lock" aria-hidden="true"></i> Save new password
+                </span>
+              </button>
+            </form>
+
+            <!-- MFA notice — same card as the sign-in screen -->
+            <div class="mfa-card">
+              <div class="mfa-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></div>
+              <div class="mfa-copy">
+                <span class="mfa-title">Two-factor verification enabled</span>
+                <span class="mfa-desc">A new password isn't enough on its own — you'll still be asked for a
+                  one-time code sent to your email each time you sign in.</span>
+              </div>
+            </div>
+
+          </div><!-- /screenSetPassword -->
+
+          <!-- ══════════ DONE ══════════ -->
+          <div id="screenDone" class="hidden">
+            <div class="success-icon"><i class="fa-solid fa-circle-check" aria-hidden="true"></i></div>
+            <h1 class="auth-title">Password updated</h1>
+            <p class="auth-sub">You can now sign in with your new password. You'll also be asked for a one-time
+              code sent to your email.</p>
+            <a class="btn-outline-block" href="../login/login.html">
+              <i class="fa-solid fa-arrow-right" aria-hidden="true"></i> Go to sign in
+            </a>
+          </div><!-- /screenDone -->
+
+          <!-- ══════════ LINK NO LONGER VALID ══════════ -->
+          <div id="screenInvalid" class="hidden">
+            <div class="success-icon success-icon--warn"><i class="fa-solid fa-link-slash" aria-hidden="true"></i>
+            </div>
+            <h1 class="auth-title">This link can't be used</h1>
+            <p class="auth-sub" id="invalidReason">Reset links can only be used once, and expire about an hour
+              after they're sent. Request a new one from the sign-in page.</p>
+            <a class="btn-outline-block" href="../login/login.html">
+              <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to sign in
+            </a>
+          </div><!-- /screenInvalid -->
+
+        </div>
+      </div><!-- /auth-left-scroll -->
+
+      <div class="auth-left-footer">
+        <p class="compliance-note">
+          <i class="fa-solid fa-lock" aria-hidden="true"></i> Encrypted in transit and at rest &middot; Compliant
+          with the Data Privacy Act of 2012
+        </p>
+      </div>
+    </div><!-- /auth-left -->
+
+    <!-- RIGHT — PHOTO / BRAND PANEL -->
+    <div class="auth-right">
+
+      <div class="collage-grid" aria-hidden="true">
+        <div class="collage-tile tile-hero">
+          <img src="../images/6307418641552576901.jpg" alt="" loading="lazy" />
+        </div>
+        <div class="collage-tile tile-b">
+          <img src="../images/6307418641552576906.jpg" alt="" loading="lazy" />
+        </div>
+        <div class="collage-tile tile-c">
+          <img src="../images/6307418641552576898.jpg" alt="" loading="lazy" />
+        </div>
+        <div class="collage-tile tile-d">
+          <img src="../images/6307418641552576913.jpg" alt="" loading="lazy" />
+        </div>
+        <div class="collage-tile tile-e">
+          <img src="../images/484656798_4161357734092890_658873839055635526_n.jpg" alt="" loading="lazy" />
+        </div>
+      </div>
+      <div class="collage-wash" aria-hidden="true"></div>
+      <div class="collage-scrim" aria-hidden="true"></div>
+
+      <div class="right-content">
+        <span class="admin-badge"><span class="admin-badge-dot" aria-hidden="true"></span>ACCOUNT RECOVERY</span>
+
+        <div class="right-copy">
+          <span class="right-eyebrow">Predictive Glucose Intelligence</span>
+          <h2 class="right-headline">Better health, built with the <span class="accent">community.</span></h2>
+          <p class="right-tagline">Real outreach, real barangays — powering a platform that flags risk before it
+            becomes an emergency.</p>
+        </div>
+      </div>
+
+    </div><!-- /auth-right -->
+
+  </div><!-- /auth-shell -->
+
+  <script type="module" src="reset.js"></script>
+</body>
+
+</html>
