@@ -17,6 +17,7 @@ const {
   handle,
   requireVerifiedAdmin,
 } = require('./_lib/core');
+const audit = require('./_lib/audit');
 
 const ALL_ROLES = ['admin', 'nurse', 'bhw'];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -167,6 +168,28 @@ module.exports = handle(async (req) => {
   }
 
   await ref.update(updates);
+
+  /* A role change, a deactivation, and a password reset are each worth
+     their own line in the feed - "updated the account" would bury the
+     three changes anyone actually goes looking for. */
+  const targetName = updates.fullName || current.fullName || '';
+  const events = [];
+  if (updates.role && updates.role !== current.role) {
+    events.push(['STAFF_ROLE_CHANGED', current.role + ' to ' + updates.role]);
+  }
+  if (updates.status && updates.status !== current.status) {
+    events.push([updates.status === 'active' ? 'STAFF_ACTIVATED' : 'STAFF_DEACTIVATED', '']);
+  }
+  if (authUpdates.password) {
+    events.push(['STAFF_PASSWORD_RESET', '']);
+  }
+  if (!events.length) {
+    events.push(['STAFF_UPDATED', Object.keys(updates).join(', ')]);
+  }
+
+  for (const [action, detail] of events) {
+    await audit.record({ actorUid: caller.uid, action, targetId: id, targetName, detail });
+  }
 
   return { id, updated: Object.keys(updates), hasLogin: isAuthAccount };
 });

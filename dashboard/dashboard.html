@@ -293,6 +293,24 @@
         </div>
       </div>
 
+      <!-- SYSTEM ACTIVITY — Super Admin only.
+           data-role-only makes session.js remove it outright for anyone
+           else, and firestore.rules refuses the audit_log read regardless,
+           so a nurse gets nothing even with the markup forced back in. -->
+      <div class="dash-card" id="activityCard" data-role-only="admin" hidden>
+        <div class="dash-card-hdr">
+          <div>
+            <div class="dash-card-title">
+              <i class="fa-solid fa-clock-rotate-left"></i> System Activity
+            </div>
+            <div class="dash-card-sub">Who changed what, most recent first</div>
+          </div>
+        </div>
+        <div id="activityList" class="activity-list">
+          <div class="activity-empty">Loading recent activity...</div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -304,6 +322,7 @@
   <script type="module" src="../shared/session.js"></script>
   <script type="module" src="../shared/logout-confirm.js"></script>
   <script type="module" src="../shared/patients-data.js"></script>
+  <script type="module" src="../shared/activity-feed.js"></script>
   <script type="module" src="dashboard.js"></script>
 </body>
 

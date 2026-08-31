@@ -771,3 +771,21 @@
 @media (prefers-reduced-motion: reduce) {
   .btn-clear-filters { transition: none; }
 }
+
+/* ── Autofill detection ──
+   Chrome autofills a saved email into this field regardless of
+   autocomplete=off, type=search, or the field's name, which silently
+   filtered the roster to whoever owned that address. There is no
+   autofill event to listen for, so this animation fires on the
+   :-webkit-autofill state and the script listens for it by name.
+
+   The animation itself does nothing visible; it exists to be noticed. */
+@keyframes diacareAutofillDetected {
+  from { outline-color: transparent; }
+  to { outline-color: transparent; }
+}
+
+.search-input:-webkit-autofill {
+  animation-name: diacareAutofillDetected;
+  animation-duration: 1ms;
+}

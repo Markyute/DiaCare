@@ -11,6 +11,7 @@
    ================================================================ */
 
 const { auth, db, ApiError, handle, requireVerifiedAdmin } = require('./_lib/core');
+const audit = require('./_lib/audit');
 
 module.exports = handle(async (req) => {
   const caller = await requireVerifiedAdmin(req);
@@ -29,9 +30,11 @@ module.exports = handle(async (req) => {
   }
 
   const ref = db.collection('users').doc(id);
-  if (!(await ref.get()).exists) {
+  const snap = await ref.get();
+  if (!snap.exists) {
     throw new ApiError(404, 'That personnel record no longer exists.');
   }
+  const targetName = snap.data().fullName || '';
 
   await ref.update({ status });
 
@@ -52,6 +55,14 @@ module.exports = handle(async (req) => {
       await auth.revokeRefreshTokens(id);
     }
   }
+
+  await audit.record({
+    actorUid: caller.uid,
+    action: status === 'active' ? 'STAFF_ACTIVATED' : 'STAFF_DEACTIVATED',
+    targetId: id,
+    targetName,
+    detail: hasLogin && status === 'inactive' ? 'Signed out of any open sessions' : '',
+  });
 
   return { ok: true, id, status, hasLogin };
 });

@@ -28,6 +28,7 @@ const {
   handle,
   requireVerifiedAdmin,
 } = require('./_lib/core');
+const audit = require('./_lib/audit');
 
 const DASHBOARD_ROLES = ['admin', 'nurse'];
 const ALL_ROLES = ['admin', 'nurse', 'bhw'];
@@ -99,6 +100,15 @@ module.exports = handle(async (req) => {
 
     const ref = db.collection('users').doc();
     await ref.set({ ...profile, username, email: email || '' });
+
+    await audit.record({
+      actorUid: caller.uid,
+      action: 'STAFF_CREATED',
+      targetId: ref.id,
+      targetName: fullName,
+      detail: 'BHW roster record, no dashboard login',
+    });
+
     return { id: ref.id, role, hasLogin: false };
   }
 
@@ -131,6 +141,14 @@ module.exports = handle(async (req) => {
   /* The document id is the Auth uid: loadActiveProfile() looks the
      profile up by uid on every signed-in request. */
   await db.collection('users').doc(user.uid).set({ ...profile, email, username: '' });
+
+  await audit.record({
+    actorUid: caller.uid,
+    action: 'STAFF_CREATED',
+    targetId: user.uid,
+    targetName: fullName,
+    detail: role === 'admin' ? 'Super Admin account' : 'RHU Nurse account',
+  });
 
   /* No OTP claims are granted here — the new account still has to pass
      the emailed code on its first sign-in like everyone else. */

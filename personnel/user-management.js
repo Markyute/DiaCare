@@ -60,7 +60,12 @@ let PERSONNEL = [];
 /* Stored role values vs what the table and modal show. Firestore holds
    the short form because that is also what lands in the ID token and
    what firestore.rules compares against. */
-const ROLE_LABELS = { admin: 'Administrator', nurse: 'RHU Nurse', bhw: 'BHW' };
+/* 'admin' stays the stored value and the token claim - it is what
+   firestore.rules compares against - while the label reads Super Admin,
+   which is what the role actually is here: the single account that can
+   manage personnel. Renaming the stored value would mean migrating every
+   existing claim and rule for a wording change. */
+const ROLE_LABELS = { admin: 'Super Admin', nurse: 'RHU Nurse', bhw: 'BHW' };
 const DASHBOARD_ROLES = ['admin', 'nurse'];
 
 function roleLabel(role) {
@@ -265,6 +270,50 @@ document.querySelectorAll('[data-status]').forEach(btn => {
   });
 });
 
+/* ================================================================
+   AUTOFILL
+
+   Chrome treats the first text input on a page as a login field and
+   fills a saved email into it. autocomplete=off, type=search, and an
+   unrelated name all fail to stop it, and the filter is applied
+   silently - the roster just looks like it lost rows.
+
+   Two defences, because neither is reliable alone:
+
+     - readonly until the field is actually touched. Chrome skips
+       readonly fields, and a filter box nobody has focused has no
+       reason to be editable.
+     - the autofill animation hook, for when it fills anyway. A value
+       that arrives without a keystroke is not a search the user asked
+       for, so it is discarded rather than applied.
+   ================================================================ */
+(function guardSearchAgainstAutofill() {
+  const input = document.getElementById('searchInput');
+  if (!input) return;
+
+  /* A filter is a per-visit thing; it should never arrive pre-filled,
+     by autofill or by a browser restoring the last value. */
+  input.value = '';
+
+  input.setAttribute('readonly', 'readonly');
+  const release = () => input.removeAttribute('readonly');
+  ['focus', 'pointerdown', 'keydown'].forEach((evt) => {
+    input.addEventListener(evt, release, { once: true });
+  });
+
+  input.addEventListener('animationstart', (e) => {
+    if (e.animationName !== 'diacareAutofillDetected') return;
+    /* Deferred: clearing inside the event that announced the fill can be
+       overwritten by the fill still completing. */
+    setTimeout(() => {
+      if (!input.value) return;
+      input.value = '';
+      searchQuery = '';
+      renderTable();
+    }, 0);
+  });
+})();
+
 /* 'search' fires on the native clear button too, which 'input' alone
    misses in some browsers. */
 ['input', 'search', 'change'].forEach((evt) => {
@@ -299,7 +348,7 @@ document.getElementById('btnClearFilters')?.addEventListener('click', clearFilte
 /* ================================================================
    USERNAME vs EMAIL — mutually exclusive based on role, because they
    authenticate against two different logins entirely:
-   - Administrator and RHU Nurse accounts sign into this website, which
+   - Super Admin and RHU Nurse accounts sign into this website, which
      authenticates against Firebase Auth on email + password and then an
      emailed code (see login.js) — never a username. These get a real
      Firebase Auth account.

@@ -19,7 +19,7 @@ import { auth, db, onAuthStateChanged } from './firebase.js';
 import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 const ROLE_LABELS = {
-  admin: 'Administrator',
+  admin: 'Super Admin',
   nurse: 'RHU Nurse',
   bhw: 'BHW',
 };
