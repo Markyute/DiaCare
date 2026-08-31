@@ -368,9 +368,18 @@ async function addEncodedPatient(patient) {
 async function addVisitToPatient(patientId, visit) {
   const [sys, dia] = String(visit.bp || '').split('/').map(Number);
 
+  const owner = rawPatients.get(patientId);
+
   const payload = {
     patientId,
+    /* Who took the reading. Empty for a visit encoded at the RHU, which
+       is not a BHW visit at all. */
     bhwId: visit.bhwId || '',
+    /* Who follows this patient. Copied from the patient so the BHW's app
+       can see RHU visits in the same history — without it the rules hide
+       them, and the worker knocks on the door not knowing the patient was
+       seen at the health unit last week. */
+    assignedBhwId: (owner && owner.assignedBhwId) || '',
     recordedBy: visit.recordedBy || '',
     bloodGlucose: Number(visit.glucose) || null,
     systolicBP: Number.isFinite(sys) ? sys : null,

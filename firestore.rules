@@ -163,14 +163,25 @@ service cloud.firestore {
     // writing a newer record, not erasing the history a risk score was
     // calculated from.
     match /health_records/{recordId} {
+      // Read by the patient's assigned worker, not by whoever wrote the
+      // record. A visit encoded at the RHU has no bhwId, so keying the
+      // read on that hid the nurse's own visits from the BHW who follows
+      // that patient - an incomplete history, and exactly the history
+      // they need before knocking on the door.
+      //
+      // assignedBhwId is copied onto the record rather than looked up
+      // through the patient, because a rule that reads another document
+      // costs a lookup for every record in every list.
       allow read: if signedInAndVerified()
-                  || (isBhw() && resource.data.bhwId == request.auth.uid);
+                  || (isBhw() && resource.data.assignedBhwId == request.auth.uid);
 
       // A record names the worker who took it, and a BHW may only file
       // one under their own name - otherwise a visit could be attributed
       // to a colleague who never made it.
       allow create: if signedInAndVerified()
-                    || (isBhw() && request.resource.data.bhwId == request.auth.uid);
+                    || (isBhw()
+                        && request.resource.data.bhwId == request.auth.uid
+                        && request.resource.data.assignedBhwId == request.auth.uid);
 
       allow update: if signedInAndVerified();
 
