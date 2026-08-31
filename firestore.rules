@@ -86,7 +86,12 @@ service cloud.firestore {
       allow update: if (signedInAndVerified() || isBhw())
                     && request.auth.uid == uid
                     && request.resource.data.diff(resource.data).affectedKeys()
-                         .hasOnly(['fullName', 'contact', 'initials', 'photo', 'updatedAt']);
+                    // fcmToken is here so the app can register the device
+                    // for push. It identifies a handset, not a person, and
+                    // a worker overwriting their own is harmless — the
+                    // fields that decide access are still absent.
+                         .hasOnly(['fullName', 'contact', 'initials', 'photo',
+                                   'fcmToken', 'fcmTokenUpdatedAt', 'updatedAt']);
 
       allow create, delete: if false;
     }
@@ -171,6 +176,29 @@ service cloud.firestore {
 
       // A reading is a clinical record. Correcting one means writing a
       // newer record, not erasing the history a risk score came from.
+      allow delete: if false;
+    }
+
+    // On-device alerts the app raises for its own worker: a high reading,
+    // a patient not seen in a while. They belong to one BHW, so they are
+    // scoped by bhwId the same way patients are by assignedBhwId.
+    //
+    // These live in Firestore rather than on the phone so they survive a
+    // reinstall or a replacement device - the alert about a patient
+    // nobody has visited in a month is exactly the thing that should not
+    // vanish with a broken handset.
+    //
+    // The dashboard does not read these. It computes its own alerts from
+    // the readings themselves, which is the same information reached a
+    // different way.
+    match /notifications/{notifId} {
+      allow read: if isBhw() && resource.data.bhwId == request.auth.uid;
+      allow create: if isBhw() && request.resource.data.bhwId == request.auth.uid;
+      // Marking read or resolved. The owner cannot be reassigned, so an
+      // alert cannot be moved onto someone else's list.
+      allow update: if isBhw()
+                    && resource.data.bhwId == request.auth.uid
+                    && request.resource.data.bhwId == resource.data.bhwId;
       allow delete: if false;
     }
 
