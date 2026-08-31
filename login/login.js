@@ -60,7 +60,23 @@ function showLoginForm() {
   document.getElementById('resumeVeil')?.remove();
 }
 
+/* Resuming is a question about how this page was ARRIVED at, so it is
+   asked once, on the first answer Firebase gives, and never again.
+
+   onAuthStateChanged also fires the moment a password is accepted.
+   Without these guards that firing was treated as "arrived with a
+   session": a correct password redirected straight to the dashboard on
+   claims left over from an earlier verification, skipping the emailed
+   code entirely - and if the dashboard then disagreed, the two pages
+   bounced the operator between them, which looks exactly like a login
+   that loads and returns to itself. */
+let resumeDecided = false;
+let signingIn = false;
+
 onAuthStateChanged(auth, async (user) => {
+  if (resumeDecided || signingIn) return;
+  resumeDecided = true;
+
   if (!user) {
     showLoginForm();
     return;
@@ -82,7 +98,10 @@ onAuthStateChanged(auth, async (user) => {
 
 /* If Firebase never answers at all, do not leave the operator staring
    at a blank page. */
-setTimeout(showLoginForm, 6000);
+setTimeout(() => {
+  resumeDecided = true;
+  showLoginForm();
+}, 6000);
 
 
 
@@ -250,6 +269,10 @@ form?.addEventListener('submit', async (e) => {
     return;
   }
 
+  /* From here the two-step flow owns the page. Signing in changes the
+     auth state, and the resume check must not read that as a returning
+     session and redirect over the code step. */
+  signingIn = true;
   setLoading(true);
   hideAlert();
 
