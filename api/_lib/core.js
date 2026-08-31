@@ -52,7 +52,12 @@ const db = admin.firestore();
    ================================================================ */
 const CODE_TTL_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
-const MAX_SENDS_PER_WINDOW = 5;
+/* Five was too tight in practice. Every sign-in costs one, and so does
+   every mistyped password, closed tab, and code that arrived after the
+   operator gave up - a nurse starting a shift can reach five without
+   doing anything unreasonable, and then cannot sign in for an hour.
+   Ten still makes this useless for flooding an inbox. */
+const MAX_SENDS_PER_WINDOW = 10;
 const SEND_WINDOW_MS = 60 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 30 * 1000;
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;

@@ -274,8 +274,25 @@ form?.addEventListener('submit', async (e) => {
     showScreen('twoFactor');
     document.getElementById('tfaCode')?.focus();
   } catch (err) {
-    await signOut(auth).catch(() => {});
     setLoading(false);
+
+    /* A send limit is not a failed sign-in. The password was right, and
+       a code from a minute ago may still be sitting in their inbox, so
+       this goes to the verification screen with the reason rather than
+       discarding the password step and making them start over.
+
+       Anything else - no staff profile, a deactivated account, mail that
+       could not be sent - means there is nothing to verify, so the
+       half-finished session is ended. */
+    if (err && err.status === 429) {
+      document.getElementById('tfaEmailTarget').textContent = email;
+      showScreen('twoFactor');
+      showTfaAlert(authErrorMessage(err));
+      document.getElementById('tfaCode')?.focus();
+      return;
+    }
+
+    await signOut(auth).catch(() => {});
     showAlert(authErrorMessage(err));
     shakeShell();
   }

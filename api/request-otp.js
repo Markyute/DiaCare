@@ -53,7 +53,13 @@ module.exports = handle(async (req) => {
       throw new ApiError(429, 'Please wait ' + wait + 's before requesting another code.');
     }
     if (sends >= MAX_SENDS_PER_WINDOW) {
-      throw new ApiError(429, 'Too many codes requested. Try again in an hour.');
+      /* "In an hour" was wrong nearly always - the window started when
+         the first code went out, not now - and left no way to tell how
+         long was actually left. */
+      const minutes = Math.max(1, Math.ceil((SEND_WINDOW_MS - (now - windowStart)) / 60000));
+      throw new ApiError(429,
+        'Too many codes requested. Try again in ' + minutes +
+        (minutes === 1 ? ' minute.' : ' minutes.'));
     }
 
     tx.set(throttleRef, { windowStart, sends: sends + 1, lastSentAt: now }, { merge: true });
