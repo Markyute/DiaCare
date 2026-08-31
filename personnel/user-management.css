@@ -189,6 +189,12 @@
   color: #fff;
 }
 
+.pill-purple.active {
+  background: #92400e;
+  border-color: #92400e;
+  color: #fff;
+}
+
 .pill-amber.active {
   background: var(--status-warning);
   border-color: var(--status-warning);

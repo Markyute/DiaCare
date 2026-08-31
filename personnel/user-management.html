@@ -157,8 +157,9 @@
           <span class="filter-label">Role</span>
           <div class="filter-pills">
             <button class="pill active" data-role="all">All</button>
-            <button class="pill pill-teal" data-role="RHU Nurse">RHU Nurse</button>
-            <button class="pill pill-blue" data-role="BHW">BHW</button>
+            <button class="pill pill-purple" data-role="admin">Admin</button>
+            <button class="pill pill-teal" data-role="nurse">RHU Nurse</button>
+            <button class="pill pill-blue" data-role="bhw">BHW</button>
           </div>
         </div>
         <div class="filter-group">
@@ -220,8 +221,9 @@
             <label class="mfield-label" for="fRole">Role <span class="required">*</span></label>
             <select class="mfield-input" id="fRole" title="Role">
               <option value="">Select role...</option>
-              <option>RHU Nurse</option>
-              <option>BHW</option>
+              <option value="admin">Administrator</option>
+              <option value="nurse">RHU Nurse</option>
+              <option value="bhw">BHW</option>
             </select>
             <div class="mfield-error hidden" id="errRole">Role is required.</div>
           </div>
@@ -244,7 +246,7 @@
             <div class="mfield-hint" id="fUsernameHint">Signs into the mobile app — BHWs don't use email.</div>
             <div class="mfield-error hidden" id="errUsername">Username is required.</div>
           </div>
-          <div class="mfield-group">
+          <div class="mfield-group" id="fPasswordGroup">
             <label class="mfield-label" id="fPasswordLabel" for="fPassword">Password <span class="required">*</span></label>
             <div class="pwd-wrap">
               <input class="mfield-input" type="password" id="fPassword" placeholder="Min. 6 characters" title="Password" />
@@ -314,7 +316,7 @@
   <script src="../shared/notifications.js"></script>
   <script src="../shared/profile.js"></script>
   <script type="module" src="../shared/logout-confirm.js"></script>
-  <script src="user-management.js"></script>
+  <script type="module" src="user-management.js"></script>
 </body>
 
 </html>

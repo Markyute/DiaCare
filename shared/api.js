@@ -66,4 +66,5 @@ export const requestOtp = () => call('request-otp');
 export const verifyOtp = (code) => call('verify-otp', { code });
 export const endSession = () => call('end-session');
 export const createStaffAccount = (payload) => call('create-staff', payload);
-export const setStaffStatus = (uid, status) => call('set-staff-status', { uid, status });
+export const updateStaffAccount = (payload) => call('update-staff', payload);
+export const setStaffStatus = (id, status) => call('set-staff-status', { id, status });

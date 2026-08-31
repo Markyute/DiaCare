@@ -3,6 +3,19 @@
    DiaCare RHU Libon — Personnel / User Management JavaScript
    ================================================================ */
 
+import { db } from '../shared/firebase.js';
+import {
+  collection,
+  getDocs,
+  query,
+  orderBy,
+} from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
+import {
+  createStaffAccount,
+  updateStaffAccount,
+  setStaffStatus,
+} from '../shared/api.js';
+
 /* ── Session Guard ──
    Lives in shared/auth-guard.js now, loaded from this page's HTML. It
    checks the Firebase session and the verified-code claim rather than a
@@ -30,21 +43,68 @@ document.addEventListener('click', (e) => {
 
 /* ================================================================
    PERSONNEL DATA
-   ================================================================ */
-let PERSONNEL = [
-  { id: 1, name: 'Maria Santos', initials: 'MS', color: '#22a866', role: 'RHU Nurse', username: 'msantos', email: 'msantos@rhulibon.gov.ph', contact: '09171234567', barangay: 'All Barangays', status: 'active', dateAdded: 'Jan 10, 2026' },
-  { id: 2, name: 'Jose Reyes', initials: 'JR', color: '#2f8fb8', role: 'RHU Nurse', username: 'jreyes', email: 'jreyes@rhulibon.gov.ph', contact: '09181234567', barangay: 'All Barangays', status: 'active', dateAdded: 'Jan 10, 2026' },
-  { id: 3, name: 'Ana Cruz', initials: 'AC', color: '#7c63d6', role: 'RHU Nurse', username: 'acruz', email: 'acruz@rhulibon.gov.ph', contact: '09191234567', barangay: 'All Barangays', status: 'active', dateAdded: 'Feb 3, 2026' },
-  { id: 4, name: 'Pedro Bautista', initials: 'PB', color: '#d9822b', role: 'BHW', username: 'pbautista', email: 'pbautista@rhulibon.gov.ph', contact: '09201234567', barangay: 'San Jose', status: 'active', dateAdded: 'Feb 15, 2026' },
-  { id: 5, name: 'Lorna Dela Rosa', initials: 'LD', color: '#059669', role: 'BHW', username: 'ldelarosa', email: 'ldelarosa@rhulibon.gov.ph', contact: '09211234567', barangay: 'Burabod', status: 'active', dateAdded: 'Mar 1, 2026' },
-  { id: 6, name: 'Carlos Tan', initials: 'CT', color: '#e5534b', role: 'BHW', username: 'ctan', email: 'ctan@rhulibon.gov.ph', contact: '09221234567', barangay: 'Malabiga', status: 'active', dateAdded: 'Mar 12, 2026' },
-  { id: 7, name: 'Elena Ramos', initials: 'ER', color: '#0f766e', role: 'BHW', username: 'eramos', email: 'eramos@rhulibon.gov.ph', contact: '09231234567', barangay: 'Harigue', status: 'active', dateAdded: 'Apr 5, 2026' },
-  { id: 8, name: 'Roberto Garcia', initials: 'RG', color: '#92400e', role: 'BHW', username: 'rgarcia', email: 'rgarcia@rhulibon.gov.ph', contact: '09241234567', barangay: 'Matara', status: 'inactive', dateAdded: 'Apr 20, 2026' },
-  { id: 9, name: 'Teresita Molina', initials: 'TM', color: '#1e40af', role: 'RHU Nurse', username: 'tmolina', email: 'tmolina@rhulibon.gov.ph', contact: '09251234567', barangay: 'All Barangays', status: 'active', dateAdded: 'May 8, 2026' },
-  { id: 10, name: 'Dante Pascual', initials: 'DP', color: '#6b7280', role: 'BHW', username: 'dpascual', email: 'dpascual@rhulibon.gov.ph', contact: '09261234567', barangay: 'Bonbon', status: 'inactive', dateAdded: 'May 22, 2026' },
-];
 
-let nextId = 11;
+   The roster is whatever is in Firestore's users collection — the demo
+   array this page used to hold was invisible to the rest of the system
+   and vanished on reload.
+
+   Two kinds of row live here. admin and nurse rows have a Firebase Auth
+   account and can sign into this dashboard; their document id IS the
+   Auth uid, which is what ties a signed-in token to its profile. BHW
+   rows are roster records with an auto-id and no login, because the
+   mobile app identifies people by username and Firebase Auth has no
+   username sign-in.
+   ================================================================ */
+let PERSONNEL = [];
+
+/* Stored role values vs what the table and modal show. Firestore holds
+   the short form because that is also what lands in the ID token and
+   what firestore.rules compares against. */
+const ROLE_LABELS = { admin: 'Administrator', nurse: 'RHU Nurse', bhw: 'BHW' };
+const DASHBOARD_ROLES = ['admin', 'nurse'];
+
+function roleLabel(role) {
+  return ROLE_LABELS[role] || role || '—';
+}
+
+function formatDate(value) {
+  /* createdAt is a Firestore Timestamp on a saved row, but a locally
+     added row may not have been round-tripped yet. */
+  const date = value && typeof value.toDate === 'function' ? value.toDate()
+    : value instanceof Date ? value
+    : null;
+  if (!date) return '—';
+  return date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+async function loadPersonnel() {
+  const snap = await getDocs(query(collection(db, 'users'), orderBy('createdAt', 'desc')));
+  PERSONNEL = snap.docs.map((doc) => {
+    const d = doc.data();
+    return {
+      id: doc.id,
+      name: d.fullName || '',
+      initials: d.initials || (d.fullName || '?').slice(0, 2).toUpperCase(),
+      color: d.color || '#6b7280',
+      role: d.role || 'nurse',
+      username: d.username || '',
+      email: d.email || '',
+      contact: d.contact || '',
+      barangay: d.barangay || '',
+      purok: d.purok || '',
+      status: d.status === 'inactive' ? 'inactive' : 'active',
+      mustChangePassword: !!d.mustChangePassword,
+      dateAdded: formatDate(d.createdAt),
+    };
+  });
+}
+
+async function refresh() {
+  await loadPersonnel();
+  renderStats();
+  renderTable();
+}
+
 let editingId = null;
 let deactivateId = null;
 let activeRole = 'all';
@@ -56,15 +116,15 @@ let searchQuery = '';
    ================================================================ */
 function renderStats() {
   document.getElementById('statTotal').textContent = PERSONNEL.length;
-  document.getElementById('statNurses').textContent = PERSONNEL.filter(p => p.role === 'RHU Nurse' && p.status === 'active').length;
-  document.getElementById('statBHW').textContent = PERSONNEL.filter(p => p.role === 'BHW' && p.status === 'active').length;
+  document.getElementById('statNurses').textContent = PERSONNEL.filter(p => DASHBOARD_ROLES.includes(p.role) && p.status === 'active').length;
+  document.getElementById('statBHW').textContent = PERSONNEL.filter(p => p.role === 'bhw' && p.status === 'active').length;
   document.getElementById('statInactive').textContent = PERSONNEL.filter(p => p.status === 'inactive').length;
 
   /* Login screen's "community health workers on the platform" tile —
      every BHW account that exists, active or not, since it's a
      headcount of who's registered rather than who's active today. */
   window.DiaCareStats?.publish({
-    communityHealthWorkers: PERSONNEL.filter(p => p.role === 'BHW').length,
+    communityHealthWorkers: PERSONNEL.filter(p => p.role === 'bhw').length,
   });
 }
 
@@ -78,6 +138,7 @@ function getFiltered() {
     const matchSearch = !searchQuery ||
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.barangay.toLowerCase().includes(searchQuery.toLowerCase());
     return matchRole && matchStatus && matchSearch;
   });
@@ -103,8 +164,10 @@ function renderTable() {
   emptyEl?.classList.add('hidden');
 
   tbody.innerHTML = filtered.map(p => {
-    const roleCls = p.role === 'RHU Nurse' ? 'role-badge--nurse' : 'role-badge--bhw';
-    const roleIcon = p.role === 'RHU Nurse' ? 'fa-user-nurse' : 'fa-house-medical';
+    const roleCls = p.role === 'admin' ? 'role-badge--admin'
+      : p.role === 'nurse' ? 'role-badge--nurse' : 'role-badge--bhw';
+    const roleIcon = p.role === 'admin' ? 'fa-user-shield'
+      : p.role === 'nurse' ? 'fa-user-nurse' : 'fa-house-medical';
     const statusCls = p.status === 'active' ? 'status-badge--active' : 'status-badge--inactive';
     const statusLbl = p.status === 'active' ? 'Active' : 'Inactive';
     const rowCls = p.status === 'inactive' ? 'row-inactive' : '';
@@ -118,14 +181,14 @@ function renderTable() {
           <div class="prs-av" style="background:${p.color}">${p.initials}</div>
           <div>
             <div class="prs-name">${p.name}</div>
-            <div class="prs-email">${p.email}</div>
+            <div class="prs-email">${p.email || 'no dashboard login'}</div>
           </div>
         </div>
       </td>
-      <td><span class="role-badge ${roleCls}"><i class="fa-solid ${roleIcon}"></i> ${p.role}</span></td>
-      <td style="font-family:var(--font-mono);font-size:12.5px;color:var(--ink-soft)">${p.username}</td>
-      <td style="font-size:12.5px;color:var(--ink-soft)">${p.contact}</td>
-      <td style="font-size:13px;color:var(--ink)">${p.barangay}</td>
+      <td><span class="role-badge ${roleCls}"><i class="fa-solid ${roleIcon}"></i> ${roleLabel(p.role)}</span></td>
+      <td style="font-family:var(--font-mono);font-size:12.5px;color:var(--ink-soft)">${p.username || '—'}</td>
+      <td style="font-size:12.5px;color:var(--ink-soft)">${p.contact || '—'}</td>
+      <td style="font-size:13px;color:var(--ink)">${p.barangay || '—'}</td>
       <td><span class="status-badge ${statusCls}"><span class="status-dot"></span>${statusLbl}</span></td>
       <td style="font-size:12px;color:var(--ink-faint);font-family:var(--font-mono)">${p.dateAdded}</td>
       <td>
@@ -142,7 +205,7 @@ function renderTable() {
   /* Attach listeners */
   tbody.querySelectorAll('[data-action]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const id = parseInt(btn.dataset.id);
+      const id = btn.dataset.id;
       const action = btn.dataset.action;
       if (action === 'edit') openEditModal(id);
       if (action === 'deactivate') openDeactivateModal(id, false);
@@ -183,17 +246,20 @@ document.getElementById('searchInput')?.addEventListener('input', (e) => {
 /* ================================================================
    USERNAME vs EMAIL — mutually exclusive based on role, because they
    authenticate against two different logins entirely:
+   - Administrator and RHU Nurse accounts sign into this website, which
+     authenticates against Firebase Auth on email + password and then an
+     emailed code (see login.js) — never a username. These get a real
+     Firebase Auth account.
    - BHW accounts sign into the mobile app, which checks username +
      password (see the app's own AuthService — no email field exists
-     there at all).
-   - RHU Nurse accounts sign into this website, which authenticates
-     against Firebase Auth on email + password and then an emailed
-     code (see login.js) — never a username.
+     there at all). Firebase Auth has no username login, so these are
+     roster records with no dashboard access until the mobile app's
+     authentication is decided.
    Asking for both regardless of role meant collecting a credential
    that particular account would never actually use to sign in.
    ================================================================ */
 function updateCredentialFieldsForRole(role) {
-  const isWebRole = role === 'RHU Nurse';
+  const isWebRole = DASHBOARD_ROLES.includes(role);
 
   const emailGroup = document.getElementById('fEmailGroup');
   const emailRequiredMark = document.getElementById('fEmailRequiredMark');
@@ -204,7 +270,7 @@ function updateCredentialFieldsForRole(role) {
     if (emailRequiredMark) emailRequiredMark.textContent = isWebRole ? '*' : '';
     if (emailHint) {
       emailHint.textContent = isWebRole
-        ? 'Signs into the web dashboard — also used for password resets.'
+        ? 'Signs into the web dashboard — also where the sign-in code is sent.'
         : '';
     }
     if (!isWebRole && emailInput) {
@@ -212,6 +278,12 @@ function updateCredentialFieldsForRole(role) {
       document.getElementById('errEmail')?.classList.add('hidden');
     }
   }
+
+  /* A BHW row stores no password, because no Firebase Auth account is
+     created for it. Showing the field would collect a credential that
+     is then thrown away. */
+  const passwordGroup = document.getElementById('fPasswordGroup');
+  if (passwordGroup) passwordGroup.style.display = isWebRole ? '' : 'none';
 
   const usernameGroup = document.getElementById('fUsernameGroup');
   const usernameRequiredMark = document.getElementById('fUsernameRequiredMark');
@@ -320,7 +392,22 @@ document.getElementById('pwdToggle')?.addEventListener('click', () => {
 /* ================================================================
    SAVE PERSONNEL
    ================================================================ */
-document.getElementById('modalSave')?.addEventListener('click', () => {
+/* Buttons that call the API get disabled while it is in flight —
+   double-clicking Save used to be harmless against an array, but now it
+   would try to create the same account twice. */
+function setBusy(btnId, labelId, busy, busyText) {
+  const btn = document.getElementById(btnId);
+  const lbl = document.getElementById(labelId);
+  if (btn) btn.disabled = busy;
+  if (lbl && busy) {
+    lbl.dataset.idle = lbl.dataset.idle || lbl.textContent;
+    lbl.textContent = busyText;
+  } else if (lbl && lbl.dataset.idle) {
+    lbl.textContent = lbl.dataset.idle;
+  }
+}
+
+document.getElementById('modalSave')?.addEventListener('click', async () => {
   const name = document.getElementById('fName').value.trim();
   const role = document.getElementById('fRole').value;
   const status = document.getElementById('fStatus').value;
@@ -334,17 +421,22 @@ document.getElementById('modalSave')?.addEventListener('click', () => {
 
   /* Validate */
   let valid = true;
+  const isWebRole = DASHBOARD_ROLES.includes(role);
   const checks = [
     { id: 'fName', errId: 'errName', val: name, fn: v => v.length >= 2 },
     { id: 'fRole', errId: 'errRole', val: role, fn: v => v !== '' },
   ];
-  if (!editingId) {
+  /* On an edit the password field means "change it to this", so blank
+     is the normal case and only a non-empty value is checked. */
+  if (!editingId && isWebRole) {
+    checks.push({ id: 'fPassword', errId: 'errPassword', val: password, fn: v => v.length >= 6 });
+  } else if (editingId && password) {
     checks.push({ id: 'fPassword', errId: 'errPassword', val: password, fn: v => v.length >= 6 });
   }
   // Username and email are mutually exclusive based on role — see
   // updateCredentialFieldsForRole(). Only the field this account will
   // actually use to sign in gets validated as required.
-  if (role === 'RHU Nurse') {
+  if (isWebRole) {
     checks.push({ id: 'fEmail', errId: 'errEmail', val: email, fn: v => /\S+@\S+\.\S+/.test(v) });
   } else {
     checks.push({ id: 'fUsername', errId: 'errUsername', val: username, fn: v => v.length >= 3 });
@@ -363,28 +455,38 @@ document.getElementById('modalSave')?.addEventListener('click', () => {
   });
   if (!valid) return;
 
-  const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-  const colors = ['#22a866', '#2f8fb8', '#7c63d6', '#d9822b', '#e5534b', '#059669', '#0f766e', '#1e40af', '#92400e'];
-  const color = colors[Math.floor(Math.random() * colors.length)];
+  setBusy('modalSave', 'modalSaveLbl', true, editingId ? 'Saving...' : 'Creating...');
 
-  if (editingId) {
-    const idx = PERSONNEL.findIndex(p => p.id === editingId);
-    if (idx !== -1) {
-      PERSONNEL[idx] = { ...PERSONNEL[idx], name, role, status, username, contact, email, barangay, purok, initials, mustChangePassword };
+  try {
+    if (editingId) {
+      await updateStaffAccount({
+        id: editingId,
+        fullName: name, role, status, username, email, contact, barangay, purok,
+        mustChangePassword,
+        /* Blank means "leave the password alone" rather than "set it to
+           empty", so it is only sent when the admin typed something. */
+        ...(password ? { password } : {}),
+      });
+      showToast(`${name}'s account updated successfully.`);
+    } else {
+      const res = await createStaffAccount({
+        fullName: name, role, username, email, password, contact, barangay, purok,
+        mustChangePassword,
+      });
+      showToast(res.hasLogin
+        ? `${name} added as ${roleLabel(role)}. They can sign in with that email and password.`
+        : `${name} added as ${roleLabel(role)}. This is a roster record — BHWs have no dashboard login.`);
     }
-    showToast(`${name}'s account updated successfully.`);
-  } else {
-    PERSONNEL.push({
-      id: nextId++, name, role, status, username, email, contact,
-      barangay, purok, initials, color, mustChangePassword,
-      dateAdded: new Date().toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }),
-    });
-    showToast(`${name} added as ${role} successfully.${mustChangePassword ? ' They\'ll set a permanent password on first login.' : ''}`);
-  }
 
-  closeModal();
-  renderStats();
-  renderTable();
+    closeModal();
+    await refresh();
+  } catch (err) {
+    /* The server already phrased these for an operator: which field is
+       wrong, whether the email is taken, whether the caller is allowed. */
+    showToast(err.message || 'Could not save that account.');
+  } finally {
+    setBusy('modalSave', 'modalSaveLbl', false);
+  }
 });
 
 /* ================================================================
@@ -428,15 +530,25 @@ function closeDeactivateModal() {
 document.getElementById('deactivateClose')?.addEventListener('click', closeDeactivateModal);
 document.getElementById('deactivateCancel')?.addEventListener('click', closeDeactivateModal);
 
-document.getElementById('deactivateConfirm')?.addEventListener('click', () => {
+document.getElementById('deactivateConfirm')?.addEventListener('click', async () => {
   const p = PERSONNEL.find(x => x.id === deactivateId);
   if (!p) return;
   const wasActive = p.status === 'active';
-  p.status = wasActive ? 'inactive' : 'active';
-  closeDeactivateModal();
-  renderStats();
-  renderTable();
-  showToast(`${p.name}'s account ${wasActive ? 'deactivated' : 'reactivated'} successfully.`);
+  const id = deactivateId;
+
+  setBusy('deactivateConfirm', 'deactivateLbl', true, 'Working...');
+  try {
+    /* Deactivating revokes their tokens server-side, so anyone already
+       signed in is cut off immediately rather than at their next login. */
+    await setStaffStatus(id, wasActive ? 'inactive' : 'active');
+    closeDeactivateModal();
+    await refresh();
+    showToast(`${p.name}'s account ${wasActive ? 'deactivated' : 'reactivated'} successfully.`);
+  } catch (err) {
+    showToast(err.message || 'Could not change that account.');
+  } finally {
+    setBusy('deactivateConfirm', 'deactivateLbl', false);
+  }
 });
 
 /* ================================================================
@@ -454,9 +566,20 @@ function showToast(msg) {
 /* ================================================================
    INIT
    ================================================================ */
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   renderTopNavNotifications();
   initNotifDropdown();
   renderStats();
   renderTable();
+
+  /* The roster comes over the network now, so the table renders empty
+     first and fills in. auth-guard.js has already established that
+     there is a verified session by the time this runs; without one the
+     rules reject the read and the page has bounced anyway. */
+  try {
+    await refresh();
+  } catch (err) {
+    showToast('Could not load the personnel list. Check your connection and reload.');
+    console.error('Personnel load failed:', err);
+  }
 });
