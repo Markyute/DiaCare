@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiaCare RHU Libon — Patient Monitoring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../shared/theme.css" />
+  <link rel="stylesheet" href="patient-monitoring.css" />
+  <script type="module" src="../shared/auth-guard.js"></script>
+</head>
+
+<body>
+  <a href="#main" class="skip-link">Skip to main content</a>
+  <div class="app-shell">
+
+    <!-- ═══ TOP NAV ═══ -->
+    <header class="topnav" id="topnav">
+      <div class="topnav-inner">
+        <a href="../dashboard/dashboard.html" class="topnav-brand">
+          <img src="../images/diacare-logo-new.png" alt="DiaCare Logo" class="topnav-logo" />
+          <span class="topnav-brand-text">
+            <span class="topnav-name"><span class="tn-name-dark">Dia</span><span
+                class="tn-name-brand">Care</span></span>
+            <span class="topnav-sub">RHU Libon</span>
+          </span>
+        </a>
+
+        <nav class="topnav-links">
+          <a href="../dashboard/dashboard.html" class="tn-item"><i
+              class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+          <a href="patient-monitoring.html" class="tn-item active" aria-current="page"><i
+              class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+          <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i
+              class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+          <a href="../trends/glucose-trends.html" class="tn-item"><i class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+          <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
+          <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+          <a href="../personnel/user-management.html" class="tn-item"><i class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+        </nav>
+
+        <div class="topnav-right">
+          <div class="tn-clock-wrap">
+            <div class="topbar-clock" id="topbarClock">--:--:--</div>
+            <div class="topbar-date" id="topbarDate">---</div>
+          </div>
+          <a href="../settings/settings.html" class="tn-icon-btn" title="Settings">
+            <i class="fa-solid fa-gear"></i>
+          </a>
+          <div class="tn-notif-wrap">
+            <button class="tn-icon-btn" id="notifTrigger" title="Notifications">
+              <i class="fa-solid fa-bell"></i>
+              <span class="tn-icon-badge" id="navBellBadge">0</span>
+            </button>
+            <div class="tn-notif-panel hidden" id="notifPanel">
+              <div class="tn-notif-hdr">
+                <span>Notifications</span>
+                <span class="tn-notif-count" id="notifCount">0 new</span>
+              </div>
+              <div class="tn-notif-list" id="notifList"></div>
+              <a href="../alerts/high-risk.html" class="tn-notif-footer">
+                View all alerts <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+          <button class="tn-user" id="navAvatarBtn" title="RHU Nurse — Field Personnel">
+            <div class="topbar-avatar" id="navAvatar">RN</div>
+            <div class="tn-user-info">
+              <span class="tn-user-name" id="navUserName">RHU Nurse</span>
+              <span class="tn-user-role" id="navUserRole">Field Personnel</span>
+            </div>
+          </button>
+        </div>
+
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" title="Toggle navigation menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+
+      <!-- Mobile nav panel -->
+      <div class="topnav-mobile-panel" id="mobileNavPanel">
+        <a href="../dashboard/dashboard.html" class="tn-item"><i
+            class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+        <a href="patient-monitoring.html" class="tn-item active" aria-current="page"><i
+            class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+        <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i
+            class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+        <a href="../trends/glucose-trends.html" class="tn-item"><i class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+        <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
+        <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+        <a href="../personnel/user-management.html" class="tn-item"><i class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+        <a href="../login/login.html" class="tn-item"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+      </div>
+    </header>
+
+    <!-- ═══ MAIN ═══ -->
+    <main class="content" id="main">
+
+      <!-- PAGE HEADER -->
+      <div class="page-hdr">
+        <div>
+          <h1 class="page-title">Patient Monitoring</h1>
+          <p class="page-sub">Every approved patient, whether added by a BHW or an RHU Nurse — open a profile to see their full history</p>
+        </div>
+        <div class="page-hdr-actions">
+          <a href="../patient-encoding/patient-encoding.html" class="btn-encode">
+            <i class="fa-solid fa-user-plus"></i> Encode New Patient
+          </a>
+          <button class="btn btn-outline" id="btnExport">
+            <i class="fa-solid fa-file-csv"></i> Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="stat-ribbon">
+        <article class="stat-chip chip-red">
+          <div class="chip-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div>
+            <div class="chip-lbl">Highly At Risk</div>
+            <div class="chip-val" id="statCritical">0</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-amber">
+          <div class="chip-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+          <div>
+            <div class="chip-lbl">At Risk</div>
+            <div class="chip-val" id="statWarning">0</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-teal">
+          <div class="chip-icon"><i class="fa-solid fa-users"></i></div>
+          <div>
+            <div class="chip-lbl">Total Patients</div>
+            <div class="chip-val" id="statTotal">0</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-green">
+          <div class="chip-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div>
+            <div class="chip-lbl">Stable</div>
+            <div class="chip-val" id="statNormal">0</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-blue">
+          <div class="chip-icon"><i class="fa-solid fa-mobile-screen"></i></div>
+          <div>
+            <div class="chip-lbl">Via App</div>
+            <div class="chip-val" id="statViaApp">0</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-purple">
+          <div class="chip-icon"><i class="fa-solid fa-keyboard"></i></div>
+          <div>
+            <div class="chip-lbl">Manual Encoded</div>
+            <div class="chip-val" id="statManualEncoded">0</div>
+          </div>
+        </article>
+      </div>
+
+      <!-- ── PENDING APPROVALS — BHW-submitted patients awaiting review.
+           Hidden entirely when the queue is empty, so it doesn't sit
+           around as permanent clutter on a normal day. ── -->
+      <div class="dash-card pending-approvals-card hidden" id="pendingApprovalsCard">
+        <div class="dash-card-hdr">
+          <div>
+            <div class="dash-card-title">
+              <i class="fa-solid fa-user-clock"></i> Pending Patient Approvals
+              <span class="pending-count-badge" id="pendingCountBadge">0</span>
+            </div>
+            <div class="dash-card-sub">New patients submitted by BHWs, awaiting your review before they appear in monitoring</div>
+          </div>
+        </div>
+        <div class="pending-approvals-list" id="pendingApprovalsList"></div>
+      </div>
+
+      <!-- ── FILTERS ── -->
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" class="search-input" id="searchInput" autocomplete="off" placeholder="Search patient name..." />
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Risk Level</span>
+          <div class="filter-pills">
+            <button class="pill active" data-filter="all">All</button>
+            <button class="pill pill-red" data-filter="critical">Highly At Risk</button>
+            <button class="pill pill-amber" data-filter="warning">At Risk</button>
+            <button class="pill pill-green" data-filter="normal">Normal</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="barangayFilter">Barangay</label>
+          <select class="filter-select" id="barangayFilter" title="Filter by Barangay">
+            <option value="all">All Barangays</option>
+          </select>
+        </div>
+        <div class="filter-count" id="filterCount">Showing 0 patients</div>
+      </div>
+
+      <!-- ── PATIENT TABLE — deliberately minimal (ID, name, barangay,
+           risk, last record date). Everything else — vitals, full
+           history, profile — lives one click away in the tabbed
+           profile, not crammed into this row. ── -->
+      <div class="table-card">
+        <table class="patient-table" id="patientTable">
+          <thead>
+            <tr>
+              <th>Patient ID</th>
+              <th>Patient Name</th>
+              <th>Barangay</th>
+              <th>Risk Level</th>
+              <th>Last Record</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="patientTbody"></tbody>
+        </table>
+        <div class="table-empty hidden" id="tableEmpty">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <p>No patients found matching your filters.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ── PATIENT PROFILE MODAL — organized into tabs instead of one
+       long scrolling page: static profile info is separate from the
+       growing list of health records, which is separate again from
+       trends-over-time and from RHU-specific visits. ── -->
+  <div class="modal-overlay hidden" id="detailModal">
+    <div class="modal-card modal-card--wide">
+      <div class="modal-hdr">
+        <div class="modal-patient-info" id="modalPatientInfo"></div>
+        <button class="modal-close" id="modalClose" aria-label="Close modal" title="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="ptab-nav" role="tablist">
+        <button class="ptab-btn active" data-tab="profile" role="tab">
+          <i class="fa-solid fa-id-card"></i> Patient Profile
+        </button>
+        <button class="ptab-btn" data-tab="records" role="tab">
+          <i class="fa-solid fa-notes-medical"></i> Health Records
+        </button>
+        <button class="ptab-btn" data-tab="trends" role="tab">
+          <i class="fa-solid fa-chart-line"></i> Health History / Trends
+        </button>
+        <button class="ptab-btn" data-tab="rhu" role="tab">
+          <i class="fa-solid fa-hospital"></i> RHU Visit Records
+        </button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- TAB 1: Patient Profile — static/basic info only, never
+             overwritten by a health record. -->
+        <div class="ptab-panel" data-panel="profile">
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-user"></i> Personal Information</div>
+            <div class="review-field-grid" id="profilePersonalGrid"></div>
+          </div>
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-notes-medical"></i> Medical Information</div>
+            <div class="review-field-grid" id="profileMedicalGrid"></div>
+          </div>
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-phone"></i> Emergency Contact</div>
+            <div class="review-field-grid" id="profileEmergencyGrid"></div>
+          </div>
+        </div>
+
+        <!-- TAB 2: Health Records — every visit/measurement, newest
+             first, from any source. Never replaces Tab 1; each visit
+             is its own new record. -->
+        <div class="ptab-panel hidden" data-panel="records">
+          <div class="hr-card-list" id="healthRecordsList"></div>
+        </div>
+
+        <!-- TAB 3: Trends — the same records plotted over time so a
+             direction is visible at a glance, not just a table of
+             numbers. -->
+        <div class="ptab-panel hidden" data-panel="trends">
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-droplet"></i> Blood Glucose History</div>
+            <div class="trend-explain-note hidden" id="trendGlucoseExplain"></div>
+            <div class="mini-chart-wrap"><canvas id="trendGlucoseChart"></canvas></div>
+          </div>
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-heart-pulse"></i> Blood Pressure History</div>
+            <div class="mini-chart-wrap"><canvas id="trendBpChart"></canvas></div>
+          </div>
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-weight-scale"></i> BMI History</div>
+            <div class="mini-chart-wrap"><canvas id="trendBmiChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- TAB 4: RHU Visit Records — the manual-web-encoding subset
+             of Tab 2, with the entry point for logging a new one. -->
+        <div class="ptab-panel hidden" data-panel="rhu">
+          <button class="btn btn-primary mb-14" id="btnAddVisit">
+            <i class="fa-solid fa-plus"></i> Add RHU Visit
+          </button>
+          <div class="hr-card-list" id="rhuVisitList"></div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <div class="modal-flag-wrap">
+          <button class="btn-flag" id="btnFlag">
+            <i class="fa-solid fa-flag"></i> Flag for Follow-up
+          </button>
+        </div>
+        <button class="btn btn-outline" id="btnModalClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PENDING PATIENT REVIEW MODAL — separate from the vitals modal
+       above on purpose. A patient this new has no health record yet
+       (the app itself won't let a BHW log one until they're approved),
+       so this shows registration details instead — mirroring the app's
+       own Add New Patient form section-by-section, so a reviewer sees
+       exactly what the BHW actually submitted. ── -->
+  <div class="modal-overlay hidden" id="pendingDetailModal">
+    <div class="modal-card">
+      <div class="modal-hdr">
+        <div class="modal-patient-info" id="pendingModalPatientInfo"></div>
+        <button class="modal-close" id="pendingModalClose" aria-label="Close modal" title="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <div class="detail-section">
+          <div class="detail-section-title"><i class="fa-solid fa-user"></i> Personal Information</div>
+          <div class="review-field-grid" id="pendingPersonalGrid"></div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title"><i class="fa-solid fa-notes-medical"></i> Medical Information</div>
+          <div class="review-field-grid" id="pendingMedicalGrid"></div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title"><i class="fa-solid fa-phone"></i> Emergency Contact</div>
+          <div class="review-field-grid" id="pendingEmergencyGrid"></div>
+        </div>
+
+        <div class="pending-submission-note" id="pendingSubmissionNote"></div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="pendingModalCloseBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPROVE CONFIRM MODAL -->
+  <div class="modal-overlay hidden" id="approveConfirmModal">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-hdr">
+        <div class="modal-title">Approve Patient?</div>
+        <button class="modal-close" id="approveConfirmClose" aria-label="Close modal" title="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="confirm-icon confirm-icon--success"><i class="fa-solid fa-user-check"></i></div>
+        <p class="confirm-text" id="approveConfirmText">Are you sure you want to approve this patient's
+          registration? They will appear in monitoring right away.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="approveConfirmCancel">Cancel</button>
+        <button class="btn btn-primary" id="approveConfirmOk">
+          <i class="fa-solid fa-check"></i> Approve
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REJECT CONFIRM MODAL -->
+  <div class="modal-overlay hidden" id="rejectConfirmModal">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-hdr">
+        <div class="modal-title">Reject Patient?</div>
+        <button class="modal-close" id="rejectConfirmClose" aria-label="Close modal" title="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="confirm-icon"><i class="fa-solid fa-user-xmark"></i></div>
+        <p class="confirm-text" id="rejectConfirmText">Are you sure you want to reject this patient's registration?
+          This cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="rejectConfirmCancel">Cancel</button>
+        <button class="btn btn-danger" id="rejectConfirmOk">
+          <i class="fa-solid fa-xmark"></i> Reject
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="../shared/notifications.js"></script>
+  <script src="../shared/profile.js"></script>
+  <script type="module" src="../shared/logout-confirm.js"></script>
+  <script src="../shared/patients-data.js"></script>
+  <script src="patient-monitoring.js"></script>
+</body>
+
+</html>

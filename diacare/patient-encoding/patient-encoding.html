@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiaCare RHU Libon — Patient Encoding</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../shared/theme.css" />
+  <link rel="stylesheet" href="patient-encoding.css" />
+  <script type="module" src="../shared/auth-guard.js"></script>
+</head>
+
+<body>
+  <a href="#main" class="skip-link">Skip to main content</a>
+  <div class="app-shell">
+
+    <!-- ═══ TOP NAV ═══ -->
+    <header class="topnav" id="topnav">
+      <div class="topnav-inner">
+        <a href="../dashboard/dashboard.html" class="topnav-brand">
+          <img src="../images/diacare-logo-new.png" alt="DiaCare Logo" class="topnav-logo" />
+          <span class="topnav-brand-text">
+            <span class="topnav-name"><span class="tn-name-dark">Dia</span><span
+                class="tn-name-brand">Care</span></span>
+            <span class="topnav-sub">RHU Libon</span>
+          </span>
+        </a>
+
+        <nav class="topnav-links">
+          <a href="../dashboard/dashboard.html" class="tn-item"><i
+              class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+          <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i
+              class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+          <a href="patient-encoding.html" class="tn-item active" aria-current="page"><i
+              class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+          <a href="../trends/glucose-trends.html" class="tn-item"><i
+              class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+          <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i
+              class="fa-solid fa-brain"></i><span>Risk</span></a>
+          <a href="../reports/reports.html" class="tn-item"><i
+              class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+          <a href="../personnel/user-management.html" class="tn-item"><i
+              class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+        </nav>
+
+        <div class="topnav-right">
+          <div class="tn-clock-wrap">
+            <div class="topbar-clock" id="topbarClock">--:--:--</div>
+            <div class="topbar-date" id="topbarDate">---</div>
+          </div>
+          <a href="../settings/settings.html" class="tn-icon-btn" title="Settings">
+            <i class="fa-solid fa-gear"></i>
+          </a>
+          <div class="tn-notif-wrap">
+            <button class="tn-icon-btn" id="notifTrigger" title="Notifications">
+              <i class="fa-solid fa-bell"></i>
+              <span class="tn-icon-badge" id="navBellBadge">0</span>
+            </button>
+            <div class="tn-notif-panel hidden" id="notifPanel">
+              <div class="tn-notif-hdr">
+                <span>Notifications</span>
+                <span class="tn-notif-count" id="notifCount">0 new</span>
+              </div>
+              <div class="tn-notif-list" id="notifList"></div>
+              <a href="../alerts/high-risk.html" class="tn-notif-footer">
+                View all alerts <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+          <button class="tn-user" id="navAvatarBtn" title="RHU Nurse — Field Personnel">
+            <div class="topbar-avatar" id="navAvatar">RN</div>
+            <div class="tn-user-info">
+              <span class="tn-user-name" id="navUserName">RHU Nurse</span>
+              <span class="tn-user-role" id="navUserRole">Field Personnel</span>
+            </div>
+          </button>
+        </div>
+
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" title="Toggle navigation menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+
+      <!-- Mobile nav panel -->
+      <div class="topnav-mobile-panel" id="mobileNavPanel">
+        <a href="../dashboard/dashboard.html" class="tn-item"><i
+            class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+        <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i
+            class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+        <a href="patient-encoding.html" class="tn-item active" aria-current="page"><i
+            class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+        <a href="../trends/glucose-trends.html" class="tn-item"><i
+            class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+        <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i
+            class="fa-solid fa-brain"></i><span>Risk</span></a>
+        <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+        <a href="../personnel/user-management.html" class="tn-item"><i
+            class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+        <a href="../login/login.html" class="tn-item"><i
+            class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+      </div>
+    </header>
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="content" id="main">
+
+      <!-- PAGE HEADER -->
+      <div class="page-hdr">
+        <div class="page-hdr-left">
+          <div>
+            <h1 class="page-title">Patient Encoding</h1>
+            <p class="page-sub">Encode patient vitals and health records directly into the system</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ENCODING LAYOUT -->
+      <div class="encoding-layout">
+
+        <!-- ══ FORM PANEL ══ -->
+        <div class="enc-form-panel">
+          <form id="encodingForm" novalidate>
+
+            <!-- SECTION 1: Patient Info -->
+            <div class="enc-section">
+              <div class="enc-section-hdr">
+                <div class="enc-section-num">1</div>
+                <div>
+                  <div class="enc-section-title">Patient Information</div>
+                  <div class="enc-section-sub">Basic patient demographics</div>
+                </div>
+              </div>
+
+              <!-- Mode: New Patient vs Existing Patient — reuses the
+                   referral block's pill-radio styling as-is. -->
+              <div class="enc-referral enc-mode-toggle">
+                <div class="enc-referral-label">
+                  <i class="fa-solid fa-user-check"></i> Patient Type
+                </div>
+                <div class="enc-referral-options">
+                  <label class="enc-ref-option">
+                    <input type="radio" name="encodingMode" value="new" id="modeNew" checked />
+                    <span class="enc-ref-box">
+                      <i class="fa-solid fa-user-plus"></i> New Patient
+                    </span>
+                  </label>
+                  <label class="enc-ref-option">
+                    <input type="radio" name="encodingMode" value="existing" id="modeExisting" />
+                    <span class="enc-ref-box">
+                      <i class="fa-solid fa-magnifying-glass"></i> Existing Patient
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Existing-patient search — hidden in New Patient mode.
+                   Reuses the same custom-select dropdown pattern as the
+                   Barangay field below, searching the shared roster
+                   instead of the barangay list. -->
+              <div class="enc-field hidden" id="existingPatientFieldWrap">
+                <label class="enc-label" for="existingPatientSearch">
+                  Search Patient <span class="required">*</span>
+                </label>
+                <div class="custom-select-wrap" id="existingPatientWrap">
+                  <div class="custom-select-trigger" id="existingPatientTrigger" tabindex="0">
+                    <span id="existingPatientSelected">Search by name or Patient ID...</span>
+                    <i class="fa-solid fa-chevron-down custom-select-arrow" id="existingPatientArrow"></i>
+                  </div>
+                  <div class="custom-select-dropdown hidden" id="existingPatientDropdown">
+                    <div class="custom-select-search-wrap">
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                      <input type="text" class="custom-select-search" id="existingPatientSearch"
+                        placeholder="Search by name or Patient ID..." autocomplete="off" />
+                    </div>
+                    <ul class="custom-select-list" id="existingPatientList"></ul>
+                  </div>
+                </div>
+                <div class="enc-error hidden" id="errExistingPatient">Select a patient from the list.</div>
+              </div>
+
+              <div class="enc-grid enc-grid--3">
+                <div class="enc-field enc-field--span2">
+                  <label class="enc-label" for="patientName">
+                    Full Name <span class="required">*</span>
+                  </label>
+                  <input class="enc-input" type="text" id="patientName" placeholder="e.g. Maria Santos" maxlength="100"
+                    required />
+                  <div class="enc-error hidden" id="errName">Name is required.</div>
+                </div>
+                <div class="enc-field">
+                  <label class="enc-label" for="patientId">Patient ID</label>
+                  <input class="enc-input" type="text" id="patientId" placeholder="Auto-generated" readonly />
+                </div>
+              </div>
+
+              <div class="enc-grid enc-grid--3">
+                <div class="enc-field">
+                  <label class="enc-label" for="patientAge">
+                    Age <span class="required">*</span>
+                  </label>
+                  <input class="enc-input" type="number" id="patientAge" placeholder="e.g. 45" min="0" max="120"
+                    required />
+                  <div class="enc-error hidden" id="errAge">Valid age required.</div>
+                </div>
+                <div class="enc-field">
+                  <label class="enc-label" for="patientSex">
+                    Sex <span class="required">*</span>
+                  </label>
+                  <select class="enc-input" id="patientSex" required>
+                    <option value="">Select...</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                  </select>
+                  <div class="enc-error hidden" id="errSex">Sex is required.</div>
+                </div>
+
+                <div class="enc-field">
+                  <label class="enc-label" for="barangaySearch">
+                    Barangay <span class="required">*</span>
+                  </label>
+                  <div class="custom-select-wrap" id="barangayWrap">
+                    <div class="custom-select-trigger" id="barangayTrigger" tabindex="0">
+                      <span id="barangaySelected">Select barangay...</span>
+                      <i class="fa-solid fa-chevron-down custom-select-arrow" id="barangayArrow"></i>
+                    </div>
+                    <div class="custom-select-dropdown hidden" id="barangayDropdown">
+                      <div class="custom-select-search-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" class="custom-select-search" id="barangaySearch"
+                          placeholder="Search barangay..." autocomplete="off" />
+                      </div>
+                      <ul class="custom-select-list" id="barangayList"></ul>
+                    </div>
+                  </div>
+                  <input type="hidden" id="patientBarangay" name="patientBarangay" required />
+
+                  <div class="enc-error hidden" id="errBarangay">Barangay is required.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 2: Vital Signs -->
+            <div class="enc-section">
+              <div class="enc-section-hdr">
+                <div class="enc-section-num">2</div>
+                <div>
+                  <div class="enc-section-title">Vital Signs</div>
+                  <div class="enc-section-sub">Current patient vital sign readings</div>
+                </div>
+              </div>
+
+              <div class="enc-grid enc-grid--2">
+
+                <!-- Glucose -->
+                <div class="enc-field enc-field--span2">
+                  <label class="enc-label" for="glucose">
+                    Blood Glucose <span class="required">*</span>
+                  </label>
+                  <div class="enc-input-wrap">
+                    <input class="enc-input enc-input--unit" type="number" id="glucose" placeholder="e.g. 120" min="20"
+                      max="600" required />
+                    <span class="enc-unit">mg/dL</span>
+                  </div>
+                  <div class="enc-indicator hidden" id="glucoseIndicator"></div>
+                  <div class="enc-error hidden" id="errGlucose">Valid glucose reading required.</div>
+                </div>
+
+                <!-- Blood Pressure -->
+                <div class="enc-field enc-field--span2">
+                  <label class="enc-label">
+                    Blood Pressure <span class="required">*</span>
+                  </label>
+                  <div class="enc-bp-wrap">
+                    <div class="enc-input-wrap">
+                      <input class="enc-input enc-input--unit" type="number" id="bpSystolic" placeholder="e.g. 120"
+                        title="Systolic" min="60" max="260" required />
+                      <span class="enc-unit">mmHg</span>
+                    </div>
+                    <span class="enc-bp-slash">/</span>
+                    <div class="enc-input-wrap">
+                      <input class="enc-input enc-input--unit" type="number" id="bpDiastolic" placeholder="e.g. 80"
+                        title="Diastolic" min="40" max="160" required />
+                      <span class="enc-unit">mmHg</span>
+                    </div>
+                  </div>
+                  <div class="enc-indicator hidden" id="bpIndicator"></div>
+                  <div class="enc-error hidden" id="errBp">Valid blood pressure required.</div>
+                </div>
+
+                <!-- Weight -->
+                <div class="enc-field">
+                  <label class="enc-label" for="weight">Weight</label>
+                  <div class="enc-input-wrap">
+                    <input class="enc-input enc-input--unit" type="number" id="weight" placeholder="e.g. 60" min="1"
+                      max="300" />
+                    <span class="enc-unit">kg</span>
+                  </div>
+                </div>
+
+                <!-- Height -->
+                <div class="enc-field">
+                  <label class="enc-label" for="height">Height</label>
+                  <div class="enc-input-wrap">
+                    <input class="enc-input enc-input--unit" type="number" id="height" placeholder="e.g. 155" min="50"
+                      max="250" />
+                    <span class="enc-unit">cm</span>
+                  </div>
+                </div>
+
+                <!-- BMI — computed live from Weight/Height, not typed in.
+                     Was calculated in JS on save already but never shown
+                     to the nurse entering the data. -->
+                <div class="enc-field enc-field--span2">
+                  <label class="enc-label" for="bmiDisplay">BMI (calculated)</label>
+                  <div class="enc-input-wrap">
+                    <input class="enc-input enc-input--unit" type="text" id="bmiDisplay" placeholder="Enter weight and height"
+                      readonly />
+                    <span class="enc-unit">kg/m&sup2;</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- SECTION 3: Clinical Info -->
+            <div class="enc-section">
+              <div class="enc-section-hdr">
+                <div class="enc-section-num">3</div>
+                <div>
+                  <div class="enc-section-title">Clinical Information</div>
+                  <div class="enc-section-sub">Patient clinical information and referral status</div>
+                </div>
+              </div>
+
+              <div class="enc-field">
+                <label class="enc-label" for="diabetesType">Diabetes Type</label>
+                <select class="enc-input" id="diabetesType">
+                  <option>Type 1</option>
+                  <option selected>Type 2</option>
+                  <option>Gestational</option>
+                  <option>Unknown</option>
+                </select>
+              </div>
+              <!-- Chief Complaint and Assessment/Diagnosis were removed as
+                   separate fields — the app has no equivalent to either;
+                   its own "Visit Notes & Observations" field explicitly
+                   covers "observations, patient complaints, or notes"
+                   already. Keeping them here duplicated a concept the app
+                   handles as one field, and "Diagnosis" edges toward
+                   clinical documentation the manuscript's own scope
+                   excludes ("does not provide medical diagnosis... "). -->
+
+              <div class="enc-grid enc-grid--2 mt-14">
+                <div class="enc-field">
+                  <label class="enc-label" for="medicationName">Medication Name</label>
+                  <input class="enc-input" type="text" id="medicationName" placeholder="e.g. Metformin, Insulin Glargine"
+                    maxlength="120" />
+                </div>
+                <div class="enc-field">
+                  <label class="enc-label" for="dosage">Dosage & Schedule</label>
+                  <input class="enc-input" type="text" id="dosage" placeholder="e.g. 500mg, twice daily"
+                    maxlength="120" />
+                </div>
+              </div>
+
+              <div class="enc-grid enc-grid--2 mt-14">
+                <div class="enc-field">
+                  <label class="enc-label" for="insulinUse">Insulin Use</label>
+                  <select class="enc-input" id="insulinUse">
+                    <option value="">Select...</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+                <div class="enc-field">
+                  <label class="enc-label" for="medicationAdherence">Medication Adherence</label>
+                  <select class="enc-input" id="medicationAdherence">
+                    <option value="">Select...</option>
+                    <option value="taken">Taken as Scheduled</option>
+                    <option value="partial">Partially Taken</option>
+                    <option value="missed">Missed / Not Taken</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Wording and underlying values now match the app's Add
+                   Health Record screen exactly (Taken as Scheduled /
+                   Partially Taken / Missed / Not Taken), instead of a
+                   separate 4-option scale (always/sometimes/rarely/never)
+                   that didn't map cleanly onto the app's 3 states. -->
+
+
+              <!-- Referral -->
+              <div class="enc-referral mt-14">
+                <div class="enc-referral-label">
+                  <i class="fa-solid fa-hospital"></i> Referral Recommendation
+                </div>
+                <div class="enc-referral-options">
+                  <label class="enc-ref-option">
+                    <input type="radio" name="referral" value="no" checked />
+                    <span class="enc-ref-box">
+                      <i class="fa-solid fa-xmark"></i> No Referral
+                    </span>
+                  </label>
+                  <label class="enc-ref-option">
+                    <input type="radio" name="referral" value="yes" />
+                    <span class="enc-ref-box">
+                      <i class="fa-solid fa-hospital"></i> Refer to RHU
+                    </span>
+                  </label>
+                  <label class="enc-ref-option">
+                    <input type="radio" name="referral" value="hospital" />
+                    <span class="enc-ref-box">
+                      <i class="fa-solid fa-truck-medical"></i> Hospital Referral
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="enc-field mt-14">
+                <label class="enc-label" for="notes">Visit Notes & Observations</label>
+                <textarea class="enc-input enc-textarea" id="notes"
+                  placeholder="Enter observations, patient complaints, or notes from this visit..." rows="3" maxlength="500"></textarea>
+              </div>
+
+            </div>
+
+            <!-- FORM ACTIONS -->
+            <div class="enc-actions">
+              <button type="button" class="btn btn-ghost" id="btnReset">
+                <i class="fa-solid fa-rotate-left"></i> Reset Form
+              </button>
+              <div class="enc-actions-right">
+                <button type="submit" class="btn btn-secondary" data-action="more">
+                  <i class="fa-solid fa-plus"></i> Save & Add Another
+                </button>
+                <button type="submit" class="btn btn-primary" data-action="done">
+                  <i class="fa-solid fa-check"></i> Save & Done
+                </button>
+              </div>
+            </div>
+
+          </form>
+        </div>
+
+        <!-- ══ SIDE PANEL ══ -->
+        <div class="enc-side-panel">
+
+          <!-- Risk Preview -->
+          <div class="dash-card">
+            <div class="dash-card-hdr">
+              <div>
+                <div class="dash-card-title">
+                  <i class="fa-solid fa-chart-bar"></i> Risk Assessment Preview
+                </div>
+              </div>
+            </div>
+            <div class="enc-risk-body" id="riskPreviewBody">
+              <div class="enc-risk-empty">
+                <i class="fa-solid fa-droplet"></i>
+                <p>Enter glucose and blood pressure to see the risk assessment</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reference Ranges -->
+          <div class="dash-card">
+            <div class="dash-card-hdr">
+              <div>
+                <div class="dash-card-title">
+                  <i class="fa-solid fa-circle-info"></i> Reference Ranges
+                </div>
+              </div>
+            </div>
+            <div class="enc-ref-list">
+              <div class="enc-ref-item">
+                <div class="enc-ref-dot enc-ref-dot--good"></div>
+                <div>
+                  <div class="enc-ref-label">Normal Glucose</div>
+                  <div class="enc-ref-val">70 – 179 mg/dL</div>
+                </div>
+              </div>
+              <div class="enc-ref-item">
+                <div class="enc-ref-dot enc-ref-dot--warning"></div>
+                <div>
+                  <div class="enc-ref-label">Elevated (At Risk)</div>
+                  <div class="enc-ref-val">180 – 249 mg/dL</div>
+                </div>
+              </div>
+              <div class="enc-ref-item">
+                <div class="enc-ref-dot enc-ref-dot--critical"></div>
+                <div>
+                  <div class="enc-ref-label">Critical High</div>
+                  <div class="enc-ref-val">≥ 250 mg/dL</div>
+                </div>
+              </div>
+              <div class="enc-ref-item">
+                <div class="enc-ref-dot enc-ref-dot--critical"></div>
+                <div>
+                  <div class="enc-ref-label">Critical Low (Hypo)</div>
+                  <div class="enc-ref-val">&lt; 70 mg/dL</div>
+                </div>
+              </div>
+              <div class="enc-ref-divider"></div>
+              <div class="enc-ref-item">
+                <div class="enc-ref-dot enc-ref-dot--good"></div>
+                <div>
+                  <div class="enc-ref-label">Normal BP</div>
+                  <div class="enc-ref-val">&lt; 120/80 mmHg</div>
+                </div>
+              </div>
+              <div class="enc-ref-item">
+                <div class="enc-ref-dot enc-ref-dot--warning"></div>
+                <div>
+                  <div class="enc-ref-label">Elevated BP</div>
+                  <div class="enc-ref-val">120–139 / 80–89 mmHg</div>
+                </div>
+              </div>
+              <div class="enc-ref-item">
+                <div class="enc-ref-dot enc-ref-dot--critical"></div>
+                <div>
+                  <div class="enc-ref-label">Hypertension</div>
+                  <div class="enc-ref-val">≥ 140/90 mmHg</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Encoded This Session -->
+          <div class="dash-card">
+            <div class="dash-card-hdr">
+              <div>
+                <div class="dash-card-title">
+                  <i class="fa-solid fa-list-check"></i> Encoded This Session
+                </div>
+              </div>
+              <span class="enc-session-badge" id="encodedBadge">0</span>
+            </div>
+            <div class="enc-session-list" id="encodedList">
+              <div class="enc-session-empty">No patients encoded yet.</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div><!-- /encoding-layout -->
+    </main>
+  </div><!-- /app-shell -->
+
+  <!-- SUCCESS MODAL -->
+  <div class="modal-overlay hidden" id="successModal">
+    <div class="modal-card modal-card--max-400">
+      <div class="enc-success-body">
+        <div class="enc-success-icon"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="enc-success-title">Patient Encoded Successfully!</div>
+        <div class="enc-success-name" id="successName"></div>
+        <div class="enc-success-risk" id="successRisk"></div>
+        <div class="enc-success-actions">
+          <button class="btn btn-primary btn-block" id="btnAddAnother">
+            <i class="fa-solid fa-plus"></i> Save & Add Another
+          </button>
+          <a href="../patient-monitoring/patient-monitoring.html" class="btn btn-ghost btn-block">
+            <i class="fa-solid fa-users"></i> Go to Patient Monitoring
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESET CONFIRM MODAL -->
+  <div class="modal-overlay hidden" id="resetModal">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-hdr">
+        <div class="modal-title">Reset Form?</div>
+        <button class="modal-close" id="resetModalClose" aria-label="Close modal" title="Close"><i
+            class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="confirm-icon"><i class="fa-solid fa-rotate-left"></i></div>
+        <p class="confirm-text">Reset the form? All entered data will be cleared.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="resetModalCancel">Cancel</button>
+        <button class="btn btn-danger" id="resetModalConfirm">
+          <i class="fa-solid fa-rotate-left"></i> Reset Form
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="../shared/notifications.js"></script>
+  <script src="../shared/profile.js"></script>
+  <script type="module" src="../shared/logout-confirm.js"></script>
+  <script src="../shared/patients-data.js"></script>
+  <script src="patient-encoding.js"></script>
+</body>
+
+</html>

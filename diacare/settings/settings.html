@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiaCare RHU Libon — Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../shared/theme.css" />
+  <link rel="stylesheet" href="settings.css" />
+  <script type="module" src="../shared/auth-guard.js"></script>
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="topnav" id="topnav">
+    <div class="topnav-inner">
+      <a href="../dashboard/dashboard.html" class="topnav-brand">
+        <img src="../images/diacare-logo-new.png" alt="DiaCare" class="topnav-logo" />
+        <span class="topnav-brand-text">
+          <span class="topnav-name"><span class="tn-name-dark">Dia</span><span class="tn-name-brand">Care</span></span>
+          <span class="topnav-sub">RHU Libon</span>
+        </span>
+      </a>
+      <nav class="topnav-links">
+        <a href="../dashboard/dashboard.html" class="tn-item"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+        <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+        <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+        <a href="../trends/glucose-trends.html" class="tn-item"><i class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+        <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
+        <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+        <a href="../personnel/user-management.html" class="tn-item"><i class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+      </nav>
+      <div class="topnav-right">
+        <div class="tn-clock-wrap">
+          <div class="topbar-clock" id="topbarClock">--:--:--</div>
+          <div class="topbar-date" id="topbarDate">---</div>
+        </div>
+        <a href="../settings/settings.html" class="tn-icon-btn" title="Settings" aria-label="Settings">
+          <i class="fa-solid fa-gear"></i>
+        </a>
+        <div class="tn-notif-wrap">
+          <button class="tn-icon-btn" id="notifTrigger" title="Notifications">
+            <i class="fa-solid fa-bell"></i>
+            <span class="tn-icon-badge" id="navBellBadge">0</span>
+          </button>
+          <div class="tn-notif-panel hidden" id="notifPanel">
+            <div class="tn-notif-hdr">
+              <span>Notifications</span>
+              <span class="tn-notif-count" id="notifCount">0 new</span>
+            </div>
+            <div class="tn-notif-list" id="notifList"></div>
+            <a href="../alerts/high-risk.html" class="tn-notif-footer">
+              View all alerts <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+        <button class="tn-user" title="User Profile" aria-label="User Profile">
+          <div class="topbar-avatar" id="navAvatar">RN</div>
+          <div class="tn-user-info">
+            <span class="tn-user-name" id="navName">RHU Nurse</span>
+            <span class="tn-user-role" id="navRole">Field Personnel</span>
+          </div>
+        </button>
+      </div>
+      <button class="menu-toggle" id="menuToggle" title="Toggle Navigation Menu" aria-label="Toggle Navigation Menu"><i class="fa-solid fa-bars"></i></button>
+    </div>
+    <div class="topnav-mobile-panel" id="mobileNavPanel">
+      <a href="../dashboard/dashboard.html" class="tn-item"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+      <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+      <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+      <a href="../trends/glucose-trends.html" class="tn-item"><i class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+      <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
+      <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+      <a href="../personnel/user-management.html" class="tn-item"><i class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+      <a href="../login/login.html" class="tn-item"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- PAGE HEADER -->
+    <div class="page-hdr">
+      <div>
+        <h1 class="page-title">Settings</h1>
+        <p class="page-sub">Manage your account profile and system configuration</p>
+      </div>
+    </div>
+
+    <!-- SETTINGS LAYOUT -->
+    <div class="settings-layout">
+
+      <!-- SIDEBAR TABS -->
+      <div class="settings-sidebar">
+        <button class="stab active" data-tab="profile">
+          <i class="fa-solid fa-user-circle"></i> Account Profile
+        </button>
+        <button class="stab" data-tab="password">
+          <i class="fa-solid fa-lock"></i> Change Password
+        </button>
+        <button class="stab" data-tab="thresholds">
+          <i class="fa-solid fa-sliders"></i> Risk Thresholds
+        </button>
+        <button class="stab" data-tab="alerts">
+          <i class="fa-solid fa-bell"></i> Alert Preferences
+        </button>
+        <button class="stab" data-tab="system">
+          <i class="fa-solid fa-circle-info"></i> System Info
+        </button>
+        <div class="stab-divider"></div>
+        <a href="../login/login.html" class="stab stab-logout">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+      </div>
+
+      <!-- SETTINGS CONTENT -->
+      <div class="settings-content">
+
+        <!-- ── PROFILE TAB ── -->
+        <div class="stab-panel active" id="tab-profile">
+          <div class="settings-card">
+            <div class="settings-card-hdr">
+              <div class="settings-card-title">Account Profile</div>
+              <div class="settings-card-sub">Update your personal information and profile photo</div>
+            </div>
+
+            <!-- Profile Photo -->
+            <div class="profile-photo-section">
+              <div class="profile-photo-wrap">
+                <div class="profile-avatar" id="profileAvatar">RN</div>
+                <div class="profile-photo-overlay" id="photoOverlay">
+                  <i class="fa-solid fa-camera"></i>
+                </div>
+                <input type="file" id="photoInput" accept="image/*" class="hidden" title="Upload profile photo" aria-label="Upload profile photo" />
+              </div>
+              <div class="profile-photo-info">
+                <div class="profile-photo-name" id="profileDisplayName">RHU Nurse</div>
+                <div class="profile-photo-role">Field Personnel · RHU Libon</div>
+                <button class="btn-change-photo" id="btnChangePhoto">
+                  <i class="fa-solid fa-camera"></i> Change Photo
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-divider"></div>
+
+            <!-- Profile Form -->
+            <div class="settings-field-grid">
+              <div class="sfield-group">
+                <label class="sfield-label" for="pfFullName">Full Name <span class="required">*</span></label>
+                <input class="sfield-input" type="text" id="pfFullName" value="Maria Santos" placeholder="Enter full name" title="Full Name" />
+              </div>
+              <div class="sfield-group">
+                <label class="sfield-label" for="pfEmail">Email Address <span class="required">*</span></label>
+                <input class="sfield-input" type="email" id="pfEmail" value="msantos@rhulibon.gov.ph" placeholder="Enter email address" title="Email Address" />
+              </div>
+              <div class="sfield-group">
+                <label class="sfield-label" for="pfContact">Contact Number</label>
+                <input class="sfield-input" type="text" id="pfContact" value="09171234567" placeholder="Enter contact number" title="Contact Number" />
+              </div>
+              <div class="sfield-group sfield-span2">
+                <label class="sfield-label" for="pfBarangay">Assigned Barangay</label>
+                <input class="sfield-input" type="text" id="pfBarangay" value="All Barangays" placeholder="Assigned Barangay" title="Assigned Barangay" readonly />
+                <div class="sfield-hint">Barangay assignment is managed by the admin.</div>
+              </div>
+            </div>
+
+            <div class="settings-card-footer">
+              <button class="btn-save" id="btnSaveProfile">
+                <i class="fa-solid fa-check"></i> Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── PASSWORD TAB ── -->
+        <div class="stab-panel" id="tab-password">
+          <div class="settings-card">
+            <div class="settings-card-hdr">
+              <div class="settings-card-title">Change Password</div>
+              <div class="settings-card-sub">Keep your account secure with a strong password</div>
+            </div>
+
+            <div class="settings-field-grid settings-field-grid--1">
+              <div class="sfield-group">
+                <label class="sfield-label" for="pwCurrent">Current Password <span class="required">*</span></label>
+                <div class="pwd-wrap">
+                  <input class="sfield-input" type="password" id="pwCurrent" placeholder="Enter current password" title="Current Password" />
+                  <button type="button" class="pwd-eye" data-target="pwCurrent" title="Toggle current password visibility" aria-label="Toggle current password visibility"><i class="fa-regular fa-eye"></i></button>
+                </div>
+                <div class="sfield-error hidden" id="errCurrent">Current password is required.</div>
+              </div>
+              <div class="sfield-group">
+                <label class="sfield-label" for="pwNew">New Password <span class="required">*</span></label>
+                <div class="pwd-wrap">
+                  <input class="sfield-input" type="password" id="pwNew" placeholder="Min. 8 characters" title="New Password" />
+                  <button type="button" class="pwd-eye" data-target="pwNew" title="Toggle new password visibility" aria-label="Toggle new password visibility"><i class="fa-regular fa-eye"></i></button>
+                </div>
+                <div class="pwd-strength" id="pwdStrength"></div>
+                <div class="sfield-error hidden" id="errNew">Password must be at least 8 characters.</div>
+              </div>
+              <div class="sfield-group">
+                <label class="sfield-label" for="pwConfirm">Confirm New Password <span class="required">*</span></label>
+                <div class="pwd-wrap">
+                  <input class="sfield-input" type="password" id="pwConfirm" placeholder="Re-enter new password" title="Confirm New Password" />
+                  <button type="button" class="pwd-eye" data-target="pwConfirm" title="Toggle confirm password visibility" aria-label="Toggle confirm password visibility"><i class="fa-regular fa-eye"></i></button>
+                </div>
+                <div class="sfield-error hidden" id="errConfirm">Passwords do not match.</div>
+              </div>
+            </div>
+
+            <div class="pwd-requirements">
+              <div class="req-title">Password requirements:</div>
+              <div class="req-list">
+                <div class="req-item" id="req-length"><i class="fa-solid fa-circle"></i> At least 8 characters</div>
+                <div class="req-item" id="req-upper"><i class="fa-solid fa-circle"></i> One uppercase letter</div>
+                <div class="req-item" id="req-number"><i class="fa-solid fa-circle"></i> One number</div>
+                <div class="req-item" id="req-special"><i class="fa-solid fa-circle"></i> One special character</div>
+              </div>
+            </div>
+
+            <div class="settings-card-footer">
+              <button class="btn-save" id="btnSavePassword">
+                <i class="fa-solid fa-lock"></i> Update Password
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── THRESHOLDS TAB ── -->
+        <div class="stab-panel" id="tab-thresholds">
+          <div class="settings-card">
+            <div class="settings-card-hdr">
+              <div class="settings-card-title">Risk Thresholds</div>
+              <div class="settings-card-sub">These are the fixed values the system uses to classify risk — the same
+                thresholds used by the mobile app, so a patient never gets a different classification depending on
+                which platform you check. Not user-configurable, to guarantee both stay in agreement.</div>
+            </div>
+
+            <!-- Glucose Thresholds -->
+            <div class="threshold-section">
+              <div class="threshold-section-title">
+                <i class="fa-solid fa-droplet"></i> Glucose Thresholds (mg/dL)
+              </div>
+              <div class="threshold-grid">
+                <div class="threshold-item threshold-item--critical">
+                  <div class="threshold-label">
+                    Critical High
+                    <span class="threshold-desc">Glucose at or above this value triggers a critical alert</span>
+                  </div>
+                  <div class="threshold-readonly-val">≥ 250 <span class="threshold-unit">mg/dL</span></div>
+                </div>
+                <div class="threshold-item threshold-item--warning">
+                  <div class="threshold-label">
+                    Elevated (At Risk)
+                    <span class="threshold-desc">Glucose at or above this value is considered elevated</span>
+                  </div>
+                  <div class="threshold-readonly-val">≥ 180 <span class="threshold-unit">mg/dL</span></div>
+                </div>
+                <div class="threshold-item threshold-item--critical">
+                  <div class="threshold-label">
+                    Critical Low (Hypoglycemia)
+                    <span class="threshold-desc">Glucose below this value triggers a critical alert</span>
+                  </div>
+                  <div class="threshold-readonly-val">&lt; 70 <span class="threshold-unit">mg/dL</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="settings-divider"></div>
+
+            <!-- BP Thresholds -->
+            <div class="threshold-section">
+              <div class="threshold-section-title">
+                <i class="fa-solid fa-heart-pulse"></i> Blood Pressure Thresholds (mmHg)
+              </div>
+              <div class="threshold-grid">
+                <div class="threshold-item threshold-item--critical">
+                  <div class="threshold-label">
+                    Hypertension (Critical)
+                    <div class="threshold-desc">BP at or above this triggers a critical alert</div>
+                  </div>
+                  <div class="threshold-readonly-val">≥ 140 / 90 <span class="threshold-unit">mmHg</span></div>
+                </div>
+                <div class="threshold-item threshold-item--warning">
+                  <div class="threshold-label">
+                    Elevated BP (At Risk)
+                    <div class="threshold-desc">BP at or above this is considered elevated</div>
+                  </div>
+                  <div class="threshold-readonly-val">≥ 120 / 80 <span class="threshold-unit">mmHg</span></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── ALERTS TAB ── -->
+        <div class="stab-panel" id="tab-alerts">
+          <div class="settings-card">
+            <div class="settings-card-hdr">
+              <div class="settings-card-title">Alert Preferences</div>
+              <div class="settings-card-sub">Configure how and when you receive health monitoring alerts</div>
+            </div>
+
+            <div class="alert-pref-list">
+
+              <div class="alert-pref-item">
+                <div class="alert-pref-info">
+                  <div class="alert-pref-title"><i class="fa-solid fa-circle-exclamation alert-icon-critical"></i> Critical Glucose Alerts</div>
+                  <div class="alert-pref-sub">Notify when glucose is ≥250 or &lt;70 mg/dL</div>
+                </div>
+                <label class="toggle-switch" for="alertCriticalGlucose">
+                  <input type="checkbox" id="alertCriticalGlucose" title="Critical Glucose Alerts" aria-label="Critical Glucose Alerts" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="alert-pref-item">
+                <div class="alert-pref-info">
+                  <div class="alert-pref-title"><i class="fa-solid fa-heart-pulse alert-icon-critical"></i> Critical BP Alerts</div>
+                  <div class="alert-pref-sub">Notify when blood pressure is ≥140/90 mmHg</div>
+                </div>
+                <label class="toggle-switch" for="alertCriticalBP">
+                  <input type="checkbox" id="alertCriticalBP" title="Critical BP Alerts" aria-label="Critical BP Alerts" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="alert-pref-item">
+                <div class="alert-pref-info">
+                  <div class="alert-pref-title"><i class="fa-solid fa-triangle-exclamation alert-icon-warning"></i> At-Risk Patient Alerts</div>
+                  <div class="alert-pref-sub">Notify when glucose is 180–249 mg/dL or BP is elevated</div>
+                </div>
+                <label class="toggle-switch" for="alertAtRisk">
+                  <input type="checkbox" id="alertAtRisk" title="At-Risk Patient Alerts" aria-label="At-Risk Patient Alerts" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="alert-pref-item">
+                <div class="alert-pref-info">
+                  <div class="alert-pref-title"><i class="fa-solid fa-clock-rotate-left alert-icon-missed"></i> Missed Log Alerts</div>
+                  <div class="alert-pref-sub">Notify when a patient has not submitted a reading today</div>
+                </div>
+                <label class="toggle-switch" for="alertMissed">
+                  <input type="checkbox" id="alertMissed" title="Missed Log Alerts" aria-label="Missed Log Alerts" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="alert-pref-item">
+                <div class="alert-pref-info">
+                  <div class="alert-pref-title"><i class="fa-solid fa-arrow-trend-up alert-icon-trend"></i> Worsening Trend Alerts</div>
+                  <div class="alert-pref-sub">Notify when a patient's readings are consistently increasing</div>
+                </div>
+                <label class="toggle-switch" for="alertWorsening">
+                  <input type="checkbox" id="alertWorsening" title="Worsening Trend Alerts" aria-label="Worsening Trend Alerts" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="settings-divider"></div>
+
+              <div class="alert-pref-item">
+                <div class="alert-pref-info">
+                  <div class="alert-pref-title"><i class="fa-solid fa-bell"></i> Browser Notifications</div>
+                  <div class="alert-pref-sub">Show browser popup notifications for critical alerts</div>
+                </div>
+                <label class="toggle-switch" for="alertBrowser">
+                  <input type="checkbox" id="alertBrowser" title="Browser Notifications" aria-label="Browser Notifications" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="alert-pref-item">
+                <div class="alert-pref-info">
+                  <div class="alert-pref-title"><i class="fa-solid fa-volume-high"></i> Alert Sound</div>
+                  <div class="alert-pref-sub">Play a sound when a critical alert is received</div>
+                </div>
+                <label class="toggle-switch" for="alertSound">
+                  <input type="checkbox" id="alertSound" title="Alert Sound" aria-label="Alert Sound" />
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+            </div>
+
+            <div class="settings-card-footer">
+              <button class="btn-save" id="btnSaveAlerts">
+                <i class="fa-solid fa-check"></i> Save Preferences
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SYSTEM INFO TAB ── -->
+        <div class="stab-panel" id="tab-system">
+          <div class="settings-card">
+            <div class="settings-card-hdr">
+              <div class="settings-card-title">System Information</div>
+              <div class="settings-card-sub">Current DiaCare version</div>
+            </div>
+
+            <div class="sysinfo-grid">
+              <div class="sysinfo-item">
+                <div class="sysinfo-label">Version</div>
+                <div class="sysinfo-val"><span class="sysinfo-badge">v1.0.0</span></div>
+              </div>
+            </div>
+            <!-- Health Unit, Province, Total Barangays, Database, Mobile
+                 App framework, Developed By, and Purpose were removed —
+                 that's internal tech-stack/project-attribution info a
+                 real RHU nurse or admin has no practical use for while
+                 actually using the system day to day (nobody checks a
+                 banking app's settings to see what database it runs on).
+                 That information still belongs in the project's own
+                 documentation, just not inside the running application's
+                 UI. -->
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+<script src="../shared/patients-data.js"></script>
+<script src="../shared/notifications.js"></script>
+<script src="../shared/profile.js"></script>
+<script type="module" src="../shared/logout-confirm.js"></script>
+<script src="settings.js"></script>
+</body>
+</html>

@@ -1,0 +1,1124 @@
+/* ================================================================
+   DiaCare — Admin Login
+   Two-panel split screen: solid warm-white form panel (left) +
+   deep teal-green photo/brand panel (right). Token system below is
+   scoped to this page (login.html loads only login.css, not
+   shared/theme.css) so it can't collide with the green/white
+   tokens the rest of the app already depends on.
+   ================================================================ */
+
+:root {
+  /* Brand palette */
+  --bg-deep: #0F2E28;
+  --bg-deep-2: #163C34;
+  --card: #FBFAF6;
+  --card-border: #E7E3D8;
+  --ink: #16261F;
+  --ink-soft: #56685F;
+  --brand: #2E9E6B;
+  --brand-dark: #1F7A52;
+  --accent: #E8A33D;
+  --accent-soft: #F4CE8E;
+  --danger: #D5573B;
+  /* Darker than --danger: --danger is tuned for borders/tints (3:1
+     non-text minimum); error/alert text needs the stronger 4.5:1
+     text-contrast minimum, so it gets its own token. */
+  --danger-text: #B8402A;
+  --focus: #2E9E6B;
+  /* Request-access / reset-password flow */
+  --info: #2563EB;
+  --info-text: #1D4ED8;
+  --pending: #6D4FD6;
+  --pending-bg: #EFEAFC;
+
+  /* Type */
+  --font-display: 'Sora', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--card);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ================================================================
+   FOCUS VISIBILITY — every interactive element gets an explicit,
+   high-contrast keyboard focus ring. .field-input has its own
+   border+glow treatment (handled where it's defined); the checkbox
+   ring is scoped to its sibling .check-box (also handled where it's
+   defined). This covers everything else: links and buttons.
+   ================================================================ */
+a:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ================================================================
+   SHELL — full-bleed two-column split screen (fills the viewport,
+   not a floating card)
+   ================================================================ */
+.auth-shell {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  background: var(--card);
+}
+
+/* ================================================================
+   LEFT — FORM PANEL
+   The panel is a fixed-height column split into a scrollable form
+   area + a footer strip that stays pinned/visible. The form area
+   centers its content with auto margins (not align-items:center on
+   the column) specifically so that when content grows taller than
+   the viewport — e.g. the alert banner appearing — it scrolls
+   instead of centering-and-clipping top and bottom equally.
+   ================================================================ */
+.auth-left {
+  flex: 0 0 420px;
+  width: 420px;
+  height: 100%;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Plain block scroll container, deliberately not a flex container
+   itself — a flex container trying to vertically-center an item
+   taller than itself computes a scroll origin that starts mid-way
+   through the content in Chromium/WebKit instead of at the top, so
+   on a short viewport the logo ends up scrolled above the fold by
+   default. Centering instead happens one level in (below), where
+   it can't affect this element's own overflow/scroll behavior. */
+.auth-left-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* Without this, Chromium's scroll anchoring "compensates" for the
+     alert box inserting height above the fold by silently shifting
+     scrollTop down to avoid a visual jump — which is exactly what
+     scrolled the logo out of view when an alert appeared. */
+  overflow-anchor: none;
+}
+
+.auth-left-inner {
+  min-height: 100%;
+  width: 100%;
+  padding: 48px 48px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.auth-left-footer {
+  flex: 0 0 auto;
+  padding: 16px 48px 20px;
+  border-top: 1px solid var(--card-border);
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 34px;
+}
+
+.brand-mark-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  object-fit: contain;
+  display: block;
+}
+
+.brand-mark-text {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.2px;
+}
+
+.bm-dia {
+  color: var(--ink);
+}
+
+.bm-care {
+  color: var(--brand-dark);
+}
+
+.auth-title {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -.4px;
+  margin-bottom: 6px;
+}
+
+.auth-sub {
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--ink-soft);
+  margin-bottom: 26px;
+}
+
+/* Top-of-form alert (used for placeholder link actions + generic
+   submit failures that aren't tied to one specific field) */
+.alert-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: rgba(213, 87, 59, .08);
+  border: 1px solid rgba(213, 87, 59, .22);
+  color: var(--danger-text);
+  font-size: 12.5px;
+  font-weight: 500;
+  margin-bottom: 18px;
+}
+
+.alert-box i {
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   FIELDS
+   ================================================================ */
+.field-group {
+  margin-bottom: 16px;
+}
+
+.field-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 7px;
+}
+
+.field-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field-icon {
+  position: absolute;
+  left: 15px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  pointer-events: none;
+  transition: color .15s ease;
+}
+
+.field-wrap:focus-within .field-icon {
+  color: var(--brand-dark);
+}
+
+.field-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 16px 0 40px;
+  background: #fff;
+  border: 1.5px solid var(--card-border);
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.field-input--pwd {
+  padding-right: 42px;
+}
+
+.field-input::placeholder {
+  color: var(--ink-soft);
+}
+
+.field-input:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 4px rgba(46, 158, 107, .14);
+}
+
+.field-input.error-state {
+  border-color: var(--danger);
+}
+
+.field-input.error-state:focus {
+  box-shadow: 0 0 0 4px rgba(213, 87, 59, .14);
+}
+
+.pwd-toggle {
+  position: absolute;
+  right: 12px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  border-radius: 7px;
+  transition: color .15s ease, background .15s ease;
+}
+
+.pwd-toggle:hover {
+  color: var(--brand-dark);
+  background: rgba(46, 158, 107, .08);
+}
+
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--danger-text);
+}
+
+/* ================================================================
+   OPTIONS ROW — checkbox + forgot link
+   ================================================================ */
+.options-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 4px 0 22px;
+}
+
+.check-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Visually hidden, not display:none — display:none pulls the input
+   out of the tab order entirely, which made "Keep me signed in"
+   impossible to reach or toggle with a keyboard. This keeps it
+   focusable while .check-box carries the visible checkbox look. */
+.check-label input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.check-box {
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+  border: 1.5px solid var(--card-border);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all .15s ease;
+}
+
+.check-label:hover .check-box {
+  border-color: var(--brand);
+}
+
+.check-label input:focus-visible+.check-box {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.check-label input:checked+.check-box {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.check-label input:checked+.check-box::after {
+  content: '\2713';
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.forgot-link {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brand-dark);
+  text-decoration: none;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+/* ================================================================
+   SUBMIT BUTTON
+   ================================================================ */
+.btn-submit {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px;
+  /* Both stops individually clear 4.5:1 against the white label —
+     var(--brand) alone only clears ~3.2:1, too low for 14px text. */
+  background: linear-gradient(135deg, var(--brand-dark), #14432E);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 12px 24px rgba(31, 122, 82, .3);
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+
+.btn-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(31, 122, 82, .38);
+  filter: brightness(1.04);
+}
+
+.btn-submit:active {
+  transform: translateY(0);
+}
+
+.btn-submit:disabled {
+  opacity: .75;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 17px;
+  height: 17px;
+  border: 2.5px solid rgba(255, 255, 255, .32);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ================================================================
+   MFA NOTICE CARD
+   ================================================================ */
+.mfa-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 13px 14px;
+  background: rgba(46, 158, 107, .07);
+  border: 1px solid rgba(46, 158, 107, .18);
+  border-radius: 14px;
+}
+
+.mfa-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(46, 158, 107, .14);
+  color: var(--brand-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.mfa-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mfa-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.mfa-desc {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+/* ================================================================
+   FOOTER — request access + legal line
+   ================================================================ */
+.request-line {
+  margin-top: 18px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.request-line a {
+  font-weight: 700;
+  color: var(--brand-dark);
+  text-decoration: none;
+}
+
+.request-line a:hover {
+  text-decoration: underline;
+}
+
+/* ================================================================
+   TWO-FACTOR / RESET PASSWORD — extra flow screens, sharing the
+   same field/button primitives as the sign-in form above.
+   ================================================================ */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-decoration: none;
+  margin-bottom: 22px;
+}
+
+.back-link:hover {
+  color: var(--brand-dark);
+}
+
+.info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, .07);
+  border: 1px solid rgba(37, 99, 235, .18);
+  color: var(--info-text);
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.info-box i {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--info);
+}
+
+.field-hint {
+  font-weight: 400;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+}
+
+/* Text/email inputs with no leading icon — plain padding instead of
+   the 40px left gutter .field-input reserves for .field-icon */
+.field-input--plain {
+  padding: 0 16px;
+}
+
+/* 6-digit verification code entry — large, spaced, centered so it
+   reads like a code rather than a normal text field */
+.field-input--code {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 10px;
+}
+
+.field-input--code::placeholder {
+  color: var(--card-border);
+  letter-spacing: 10px;
+}
+
+.field-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field-select {
+  width: 100%;
+  height: 46px;
+  padding: 0 40px 0 16px;
+  background: #fff;
+  border: 1.5px solid var(--card-border);
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  color: var(--ink);
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.field-select:invalid {
+  color: var(--ink-soft);
+}
+
+.field-select:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 4px rgba(46, 158, 107, .14);
+}
+
+.field-select.error-state {
+  border-color: var(--danger);
+}
+
+.field-select-caret {
+  position: absolute;
+  right: 16px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  pointer-events: none;
+}
+
+.field-textarea {
+  width: 100%;
+  min-height: 84px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1.5px solid var(--card-border);
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  color: var(--ink);
+  outline: none;
+  resize: vertical;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.field-textarea::placeholder {
+  color: var(--ink-soft);
+}
+
+.field-textarea:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 4px rgba(46, 158, 107, .14);
+}
+
+/* Success state icon — Request Submitted, Check Your Email */
+.success-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: rgba(46, 158, 107, .14);
+  color: var(--brand-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  margin-bottom: 18px;
+}
+
+/* Request summary card */
+.summary-card {
+  background: rgba(46, 158, 107, .06);
+  border: 1px solid rgba(46, 158, 107, .16);
+  border-radius: 14px;
+  padding: 4px 16px;
+  margin: 20px 0 24px;
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+}
+
+.summary-row+.summary-row {
+  border-top: 1px solid rgba(46, 158, 107, .14);
+}
+
+.summary-label {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.summary-val {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: right;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--pending-bg);
+  color: var(--pending);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+
+/* Request timeline */
+.req-timeline {
+  list-style: none;
+  margin: 0 0 26px;
+  padding: 0;
+}
+
+.req-step {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  padding-bottom: 26px;
+}
+
+.req-step:last-child {
+  padding-bottom: 0;
+}
+
+/* Connecting line between steps, drawn from each marker down to the
+   next — omitted after the last step via the padding-bottom:0 above
+   leaving no room for it to render */
+.req-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 28px;
+  bottom: 0;
+  width: 1.5px;
+  background: var(--card-border);
+}
+
+.req-step-marker {
+  flex-shrink: 0;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid var(--card-border);
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 1;
+}
+
+.req-step--done .req-step-marker {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  font-size: 12px;
+}
+
+.req-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 3px;
+}
+
+.req-step-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.req-step-sub {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+}
+
+/* Outline block button — "Back to sign in" on confirmation screens */
+.btn-outline-block {
+  width: 100%;
+  min-height: 46px;
+  padding: 12px;
+  background: #fff;
+  color: var(--ink);
+  border: 1.5px solid var(--card-border);
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: border-color .15s ease, background .15s ease;
+}
+
+.btn-outline-block:hover {
+  border-color: var(--brand);
+  background: rgba(46, 158, 107, .05);
+}
+
+/* ================================================================
+   RIGHT — PHOTO / BRAND PANEL
+   ================================================================ */
+.auth-right {
+  position: relative;
+  flex: 1 1 0;
+  overflow: hidden;
+  background: var(--bg-deep);
+}
+
+.collage-grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: repeat(4, 1fr);
+  gap: 3px;
+}
+
+.collage-tile {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-deep-2);
+  animation: tileFadeIn .6s ease both;
+}
+
+.collage-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: grayscale(55%) brightness(0.8) contrast(1.05) sepia(8%) hue-rotate(60deg) saturate(1.4);
+  mix-blend-mode: luminosity;
+  opacity: 0.9;
+}
+
+.tile-hero {
+  grid-column: 1;
+  grid-row: 1 / 5;
+}
+
+.tile-b {
+  grid-column: 2;
+  grid-row: 1;
+  animation-delay: .05s;
+}
+
+.tile-c {
+  grid-column: 2;
+  grid-row: 2;
+  animation-delay: .1s;
+}
+
+.tile-d {
+  grid-column: 2;
+  grid-row: 3;
+  animation-delay: .15s;
+}
+
+.tile-e {
+  grid-column: 2;
+  grid-row: 4;
+  animation-delay: .2s;
+}
+
+@keyframes tileFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .collage-tile,
+  .btn-submit {
+    animation: none;
+    transition: none;
+  }
+
+  .btn-submit:hover,
+  .btn-submit:active {
+    transform: none;
+  }
+
+  /* login.js also checks prefers-reduced-motion before triggering
+     this; !important covers it here too since the shake is applied
+     via inline style, which otherwise beats an external stylesheet
+     rule regardless of specificity. */
+  .auth-shell {
+    animation: none !important;
+  }
+}
+
+/* Brand-toned wash so mismatched source photos read as one system */
+.collage-wash {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(15, 46, 40, .55), rgba(22, 60, 52, .32) 50%, rgba(15, 46, 40, .6));
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* Bottom-to-top scrim so overlaid copy stays legible on any photo */
+.collage-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, var(--bg-deep) 0%, rgba(15, 46, 40, .82) 32%, rgba(15, 46, 40, .35) 68%, rgba(15, 46, 40, .35) 100%);
+  pointer-events: none;
+}
+
+/* ================================================================
+   RIGHT PANEL — copy overlay
+   ================================================================ */
+.right-content {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 48px 46px;
+}
+
+.admin-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .18);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #EAF4EE;
+}
+
+.admin-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232, 163, 61, .25);
+}
+
+.right-copy {
+  margin-top: auto;
+  max-width: 560px;
+}
+
+.right-eyebrow {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--accent-soft);
+  margin-bottom: 10px;
+}
+
+.right-headline {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.16;
+  letter-spacing: -.5px;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.right-headline .accent {
+  color: var(--accent);
+}
+
+.right-tagline {
+  font-size: 14.5px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: rgba(234, 244, 238, .78);
+  max-width: 460px;
+}
+
+.stat-row {
+  display: flex;
+  gap: 14px;
+  margin-top: 26px;
+  flex-wrap: wrap;
+}
+
+.stat-tile {
+  flex: 1 1 150px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, .08);
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 14px;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.stat-val {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.stat-lbl {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: rgba(234, 244, 238, .72);
+}
+
+/* ================================================================
+   COMPLIANCE NOTE — pinned footer strip under the form, always
+   visible (doesn't scroll away with the rest of the form content)
+   ================================================================ */
+.compliance-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.compliance-note i {
+  font-size: 10.5px;
+  color: var(--brand-dark);
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 900px) {
+  .auth-right {
+    display: none;
+  }
+
+  .auth-left {
+    flex: none;
+    width: 100%;
+  }
+
+  .auth-left-inner {
+    padding: 44px 28px 28px;
+  }
+
+  .auth-left-footer {
+    padding: 14px 28px 18px;
+  }
+}
+
+@media (max-width: 460px) {
+  .auth-left-inner {
+    padding: 32px 20px 24px;
+  }
+
+  .auth-left-footer {
+    padding: 12px 20px 16px;
+  }
+}
+
+/* Shake for failed submit */
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  20% {
+    transform: translateX(-8px);
+  }
+
+  40% {
+    transform: translateX(8px);
+  }
+
+  60% {
+    transform: translateX(-5px);
+  }
+
+  80% {
+    transform: translateX(5px);
+  }
+}

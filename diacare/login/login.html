@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiaCare — Admin Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="login.css" />
+</head>
+
+<body>
+
+  <div class="auth-shell">
+
+    <!-- LEFT — FORM PANEL -->
+    <div class="auth-left">
+      <div class="auth-left-scroll">
+        <div class="auth-left-inner">
+
+          <!-- ══════════ SIGN IN ══════════ -->
+          <div id="screenSignIn">
+
+            <div class="brand-mark">
+              <img src="../images/diacare-logo-new.png" class="brand-mark-icon" alt="DiaCare" />
+              <span class="brand-mark-text"><span class="bm-dia">Dia</span><span class="bm-care">Care</span></span>
+            </div>
+
+            <h1 class="auth-title">Welcome back</h1>
+            <p class="auth-sub">Sign in to your admin account to continue</p>
+
+            <div class="alert-box hidden" id="loginAlert" role="alert" aria-live="polite">
+              <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+              <span id="alertText"></span>
+            </div>
+
+            <form id="loginForm" novalidate>
+
+              <!-- Email -->
+              <div class="field-group">
+                <label class="field-label" for="inputEmail">Email address</label>
+                <div class="field-wrap">
+                  <i class="fa-solid fa-envelope field-icon" aria-hidden="true"></i>
+                  <input id="inputEmail" class="field-input" type="email" placeholder="you@diacare.ph"
+                    autocomplete="email" maxlength="254" required />
+                </div>
+                <div class="field-error hidden" id="errEmail" role="alert">
+                  <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                  <span id="errEmailText">Enter a valid email address</span>
+                </div>
+              </div>
+
+              <!-- Password -->
+              <div class="field-group">
+                <label class="field-label" for="inputPassword">Password</label>
+                <div class="field-wrap">
+                  <i class="fa-solid fa-lock field-icon" aria-hidden="true"></i>
+                  <input id="inputPassword" class="field-input field-input--pwd" type="password"
+                    placeholder="Enter your password" autocomplete="current-password" maxlength="128" required />
+                  <button id="pwdToggle" class="pwd-toggle" type="button" aria-label="Show password"
+                    title="Show password">
+                    <i class="fa-regular fa-eye" id="pwdEye" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <div class="field-error hidden" id="errPassword" role="alert">
+                  <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                  <span id="errPasswordText">Incorrect email or password</span>
+                </div>
+              </div>
+
+              <!-- Options row -->
+              <div class="options-row">
+                <label class="check-label" for="keepSignedIn">
+                  <input id="keepSignedIn" type="checkbox" />
+                  <span class="check-box"></span>
+                  Keep me signed in
+                </label>
+                <a class="forgot-link" href="#" id="forgotLink">Forgot password?</a>
+              </div>
+
+              <!-- Submit -->
+              <button id="btnSubmit" class="btn-submit" type="submit">
+                <span class="spinner hidden" id="btnSpinner"></span>
+                <span id="btnLabel" class="btn-label">
+                  <i class="fa-solid fa-lock" aria-hidden="true"></i> Sign in securely
+                </span>
+              </button>
+
+            </form>
+
+            <!-- MFA notice -->
+            <div class="mfa-card">
+              <div class="mfa-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></div>
+              <div class="mfa-copy">
+                <span class="mfa-title">Two-factor verification enabled</span>
+                <span class="mfa-desc">You'll be asked for a one-time code sent to your registered device after
+                  signing in.</span>
+              </div>
+            </div>
+
+          </div><!-- /screenSignIn -->
+
+          <!-- ══════════ TWO-FACTOR VERIFICATION ══════════ -->
+          <div id="screenTwoFactor" class="hidden">
+
+            <a href="#" class="back-link" id="backFromTwoFactor">
+              <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to sign in
+            </a>
+
+            <div class="brand-mark">
+              <img src="../images/diacare-logo-new.png" class="brand-mark-icon" alt="DiaCare" />
+              <span class="brand-mark-text"><span class="bm-dia">Dia</span><span class="bm-care">Care</span></span>
+            </div>
+
+            <h1 class="auth-title">Enter verification code</h1>
+            <p class="auth-sub">We sent a 6-digit code to <strong id="tfaEmailTarget">your email</strong>. It
+              expires in 5 minutes.</p>
+
+            <div class="alert-box hidden" id="tfaAlert" role="alert" aria-live="polite">
+              <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+              <span id="tfaAlertText"></span>
+            </div>
+
+            <form id="tfaForm" novalidate>
+
+              <div class="field-group">
+                <label class="field-label" for="tfaCode">Verification code</label>
+                <input id="tfaCode" class="field-input field-input--plain field-input--code" type="text"
+                  inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="one-time-code"
+                  required />
+                <div class="field-error hidden" id="errTfaCode" role="alert">
+                  <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                  <span id="errTfaCodeText">Enter the 6-digit code</span>
+                </div>
+              </div>
+
+              <button id="btnTfaSubmit" class="btn-submit" type="submit">
+                <span class="spinner hidden" id="tfaBtnSpinner"></span>
+                <span id="tfaBtnLabel" class="btn-label">
+                  <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Verify and sign in
+                </span>
+              </button>
+
+            </form>
+
+            <p class="request-line">Didn't get a code? <a href="#" id="resendCodeLink">Resend code</a></p>
+
+          </div><!-- /screenTwoFactor -->
+
+          <!-- ══════════ FORGOT / RESET PASSWORD ══════════ -->
+          <div id="screenForgotPassword" class="hidden">
+
+            <a href="#" class="back-link" id="backFromForgot">
+              <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to sign in
+            </a>
+
+            <div class="brand-mark">
+              <img src="../images/diacare-logo-new.png" class="brand-mark-icon" alt="DiaCare" />
+              <span class="brand-mark-text"><span class="bm-dia">Dia</span><span class="bm-care">Care</span></span>
+            </div>
+
+            <div id="forgotFormWrap">
+              <h1 class="auth-title">Reset your password</h1>
+              <p class="auth-sub">Enter the email on your account. If it matches an account, we'll send a link to
+                reset your password.</p>
+
+              <form id="forgotForm" novalidate>
+                <div class="field-group">
+                  <label class="field-label" for="forgotEmail">Email address</label>
+                  <div class="field-wrap">
+                    <i class="fa-solid fa-envelope field-icon" aria-hidden="true"></i>
+                    <input id="forgotEmail" class="field-input" type="email" placeholder="you@diacare.ph"
+                      autocomplete="email" maxlength="254" required />
+                  </div>
+                  <div class="field-error hidden" id="errForgotEmail" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+                    <span>Enter a valid email address</span>
+                  </div>
+                </div>
+
+                <button id="btnForgotSubmit" class="btn-submit" type="submit">
+                  <span class="spinner hidden" id="forgotBtnSpinner"></span>
+                  <span id="forgotBtnLabel" class="btn-label">
+                    <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Send reset link
+                  </span>
+                </button>
+              </form>
+            </div><!-- /forgotFormWrap -->
+
+            <div id="forgotSentWrap" class="hidden">
+              <div class="success-icon"><i class="fa-solid fa-envelope-circle-check" aria-hidden="true"></i></div>
+              <h1 class="auth-title">Check your email</h1>
+              <p class="auth-sub">If <strong id="forgotSentEmail">that address</strong> matches an account, a
+                password reset link is on its way. It expires in 30 minutes.</p>
+              <button class="btn-outline-block" id="backFromForgotSent" type="button">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to sign in
+              </button>
+            </div><!-- /forgotSentWrap -->
+
+          </div><!-- /screenForgotPassword -->
+
+        </div>
+      </div><!-- /auth-left-scroll -->
+
+      <div class="auth-left-footer">
+        <p class="compliance-note">
+          <i class="fa-solid fa-lock" aria-hidden="true"></i> Encrypted in transit and at rest &middot; Compliant
+          with the Data Privacy Act of 2012
+        </p>
+      </div>
+    </div><!-- /auth-left -->
+
+    <!-- RIGHT — PHOTO / BRAND PANEL -->
+    <div class="auth-right">
+
+      <div class="collage-grid" aria-hidden="true">
+        <div class="collage-tile tile-hero">
+          <img src="../images/6307418641552576901.jpg" alt="" loading="lazy" />
+        </div>
+        <div class="collage-tile tile-b">
+          <img src="../images/6307418641552576906.jpg" alt="" loading="lazy" />
+        </div>
+        <div class="collage-tile tile-c">
+          <img src="../images/6307418641552576898.jpg" alt="" loading="lazy" />
+        </div>
+        <div class="collage-tile tile-d">
+          <img src="../images/6307418641552576913.jpg" alt="" loading="lazy" />
+        </div>
+        <div class="collage-tile tile-e">
+          <img src="../images/484656798_4161357734092890_658873839055635526_n.jpg" alt="" loading="lazy" />
+        </div>
+      </div>
+      <div class="collage-wash" aria-hidden="true"></div>
+      <div class="collage-scrim" aria-hidden="true"></div>
+
+      <div class="right-content">
+        <span class="admin-badge"><span class="admin-badge-dot" aria-hidden="true"></span>ADMIN PORTAL</span>
+
+        <div class="right-copy">
+          <span class="right-eyebrow">Predictive Glucose Intelligence</span>
+          <h2 class="right-headline">Better health, built with the <span class="accent">community.</span></h2>
+          <p class="right-tagline">Real outreach, real barangays — powering a platform that flags risk before it
+            becomes an emergency.</p>
+        </div>
+      </div>
+
+    </div><!-- /auth-right -->
+
+  </div><!-- /auth-shell -->
+
+  <script type="module" src="login.js"></script>
+</body>
+
+</html>

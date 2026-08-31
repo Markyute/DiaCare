@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiaCare RHU Libon — Reports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../shared/theme.css" />
+  <link rel="stylesheet" href="reports.css" />
+  <script type="module" src="../shared/auth-guard.js"></script>
+</head>
+
+<body>
+  <a href="#main" class="skip-link">Skip to main content</a>
+  <div class="app-shell">
+
+    <header class="topnav" id="topnav">
+      <div class="topnav-inner">
+        <a href="../dashboard/dashboard.html" class="topnav-brand">
+          <img src="../images/diacare-logo-new.png" alt="DiaCare" class="topnav-logo" />
+          <span class="topnav-brand-text">
+            <span class="topnav-name"><span class="tn-name-dark">Dia</span><span
+                class="tn-name-brand">Care</span></span>
+            <span class="topnav-sub">RHU Libon</span>
+          </span>
+        </a>
+        <nav class="topnav-links">
+          <a href="../dashboard/dashboard.html" class="tn-item"><i
+              class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+          <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i
+              class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+          <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i
+              class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+          <a href="../trends/glucose-trends.html" class="tn-item"><i
+              class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+          <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
+          <a href="reports.html" class="tn-item active" aria-current="page"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+          <a href="../personnel/user-management.html" class="tn-item"><i
+              class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+        </nav>
+        <div class="topnav-right">
+          <div class="tn-clock-wrap">
+            <div class="topbar-clock" id="topbarClock">--:--:--</div>
+            <div class="topbar-date" id="topbarDate">---</div>
+          </div>
+          <a href="../settings/settings.html" class="tn-icon-btn" title="Settings">
+            <i class="fa-solid fa-gear"></i>
+          </a>
+          <div class="tn-notif-wrap">
+            <button class="tn-icon-btn" id="notifTrigger" title="Notifications">
+              <i class="fa-solid fa-bell"></i>
+              <span class="tn-icon-badge" id="navBellBadge">0</span>
+            </button>
+            <div class="tn-notif-panel hidden" id="notifPanel">
+              <div class="tn-notif-hdr">
+                <span>Notifications</span>
+                <span class="tn-notif-count" id="notifCount">0 new</span>
+              </div>
+              <div class="tn-notif-list" id="notifList"></div>
+              <a href="../alerts/high-risk.html" class="tn-notif-footer">
+                View all alerts <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+          <button class="tn-user" id="navAvatarBtn" title="RHU Nurse — Field Personnel">
+            <div class="topbar-avatar" id="navAvatar">RN</div>
+            <div class="tn-user-info">
+              <span class="tn-user-name" id="navUserName">RHU Nurse</span>
+              <span class="tn-user-role" id="navUserRole">Field Personnel</span>
+            </div>
+          </button>
+        </div>
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" title="Toggle navigation menu"><i class="fa-solid fa-bars"></i></button>
+      </div>
+      <div class="topnav-mobile-panel" id="mobileNavPanel">
+        <a href="../dashboard/dashboard.html" class="tn-item"><i
+            class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+        <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i
+            class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+        <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i
+            class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+        <a href="../trends/glucose-trends.html" class="tn-item"><i
+            class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+        <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
+        <a href="reports.html" class="tn-item active" aria-current="page"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+        <a href="../personnel/user-management.html" class="tn-item"><i
+            class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+        <a href="../login/login.html" class="tn-item"><i
+            class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+
+      <div class="page-hdr">
+        <div>
+          <h1 class="page-title">Reports</h1>
+          <p class="page-sub">Generate and export health monitoring summaries for barangays and patients</p>
+        </div>
+        <div class="page-hdr-actions">
+          <button class="btn-pdf" id="btnPDF"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
+          <button class="btn-csv" id="btnCSV"><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+        </div>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="report-filter-bar">
+        <div class="filter-group">
+          <label class="filter-label">Report Type</label>
+          <div class="rtype-tabs">
+            <button class="rtype-tab active" data-type="barangay"><i class="fa-solid fa-map-pin"></i> Barangay
+              Summary</button>
+            <button class="rtype-tab" data-type="patient"><i class="fa-solid fa-users"></i> Patient Summary</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label">Period</label>
+          <div class="period-tabs">
+            <button class="period-tab" data-period="7">7 Days</button>
+            <button class="period-tab active" data-period="30">30 Days</button>
+            <button class="period-tab" data-period="90">90 Days</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="barangayFilter">Barangay</label>
+          <select class="filter-select" id="barangayFilter" title="Filter by Barangay">
+            <option value="all">All Barangays</option>
+            <option>Alongong</option>
+            <option>Apud</option>
+            <option>Bacolod</option>
+            <option>Bariw</option>
+            <option>Bonbon</option>
+            <option>Buga</option>
+            <option>Bulusan</option>
+            <option>Burabod</option>
+            <option>Caguscos</option>
+            <option>East Carisac</option>
+            <option>West Carisac</option>
+            <option>Harigue</option>
+            <option>Libtong</option>
+            <option>Linao</option>
+            <option>Mabayawas</option>
+            <option>Macabugos</option>
+            <option>Magallang</option>
+            <option>Malabiga</option>
+            <option>Marayag</option>
+            <option>Matara</option>
+            <option>Molosbolos</option>
+            <option>Natasan</option>
+            <option>Niño Jesus</option>
+            <option>Nogpo</option>
+            <option>Pantao</option>
+            <option>Rawis</option>
+            <option>Sagrada Familia</option>
+            <option>Salvacion</option>
+            <option>Sampongan</option>
+            <option>San Agustin</option>
+            <option>San Antonio</option>
+            <option>San Isidro</option>
+            <option>San Jose</option>
+            <option>San Pascual</option>
+            <option>San Ramon</option>
+            <option>San Vicente</option>
+            <option>Santa Cruz</option>
+            <option>Talin-talin</option>
+            <option>Tambo</option>
+            <option>Villa Petrona</option>
+          </select>
+        </div>
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" class="search-input" id="reportSearch" autocomplete="off" placeholder="Search..." />
+        </div>
+        <div class="report-count" id="reportCount">Showing 0 records</div>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="stat-ribbon">
+        <article class="stat-chip chip-green">
+          <div class="chip-icon"><i class="fa-solid fa-users"></i></div>
+          <div>
+            <div class="chip-lbl">Total Patients</div>
+            <div class="chip-val" id="rStatPatients">0</div>
+            <div class="chip-delta up">This period</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-teal">
+          <div class="chip-icon"><i class="fa-solid fa-droplet"></i></div>
+          <div>
+            <div class="chip-lbl">Avg Glucose</div>
+            <div class="chip-val" id="rStatGlucose">0</div>
+            <div class="chip-delta">mg/dL overall</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-blue">
+          <div class="chip-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+          <div>
+            <div class="chip-lbl">Avg Blood Pressure</div>
+            <div class="chip-val chip-val--sm" id="rStatBP">0/0</div>
+            <div class="chip-delta">mmHg overall</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-red">
+          <div class="chip-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div>
+            <div class="chip-lbl">Highly At Risk</div>
+            <div class="chip-val" id="rStatCritical">0</div>
+            <div class="chip-delta down">Needs attention</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-amber">
+          <div class="chip-icon"><i class="fa-solid fa-hospital"></i></div>
+          <div>
+            <div class="chip-lbl">Referrals Made</div>
+            <div class="chip-val" id="rStatReferrals">0</div>
+            <div class="chip-delta down">Referred patients</div>
+          </div>
+        </article>
+      </div>
+
+      <!-- REPORT AREA -->
+      <div class="report-area" id="reportArea">
+
+        <!-- Print header — formal masthead matching standard Philippine
+             LGU/RHU document convention (Republic / Municipality / Office
+             block, centered, with the agency logo), not just a product
+             wordmark, since this is meant to be a printable official
+             record, not a screenshot of the dashboard. -->
+        <div class="print-header">
+          <div class="print-masthead">
+            <img src="../images/diacare-logo-new.png" alt="DiaCare Logo" class="print-logo-img print-logo-img--left" />
+            <div class="print-masthead-text">
+              <div class="print-republic">Republic of the Philippines</div>
+              <div class="print-lgu">Municipality of Libon, Province of Albay</div>
+              <div class="print-office">RURAL HEALTH UNIT</div>
+            </div>
+            <img src="../images/rhu-libon-logo.jpg" alt="RHU Libon Official Seal" class="print-logo-img print-logo-img--right" />
+          </div>
+          <div class="print-title-block">
+            <div class="print-title">Health Monitoring Report</div>
+            <div class="print-sub" id="printSub">Barangay Summary — 30 Days</div>
+          </div>
+          <div class="print-meta">
+            <div><span class="print-meta-lbl">Period Covered:</span> <span id="printPeriod">Last 30 Days</span></div>
+            <div><span class="print-meta-lbl">Barangay:</span> <span id="printBarangay">All Barangays</span></div>
+            <div><span class="print-meta-lbl">Date Generated:</span> <span id="printDate"></span></div>
+          </div>
+        </div>
+
+        <!-- BARANGAY TABLE -->
+        <div id="barangayReport">
+          <div class="report-section-hdr">
+            <div class="report-section-title"><i class="fa-solid fa-map-pin"></i> Barangay Health Summary</div>
+            <div class="report-section-sub">Average glucose, blood pressure, risk levels and referrals per barangay
+            </div>
+          </div>
+          <div class="report-table-wrap">
+            <table class="report-table report-table--barangay">
+              <thead>
+                <tr>
+                  <th>Barangay</th>
+                  <th>Patients</th>
+                  <th>Avg Glucose</th>
+                  <th>Avg BP</th>
+                  <th>Highly At Risk</th>
+                  <th>At Risk</th>
+                  <th>Normal</th>
+                  <th>Referrals</th>
+                  <th>Priority Level</th>
+                </tr>
+              </thead>
+              <tbody id="barangayTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PATIENT TABLE -->
+        <div id="patientReport" class="hidden">
+          <div class="report-section-hdr">
+            <div class="report-section-title"><i class="fa-solid fa-users"></i> Patient Health Summary</div>
+            <div class="report-section-sub">Individual patient glucose, blood pressure, risk level and referral status
+            </div>
+          </div>
+          <div class="report-table-wrap">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Age / Sex</th>
+                  <th>Barangay</th>
+                  <th>Avg Glucose</th>
+                  <th>Latest BP</th>
+                  <th>Risk Level</th>
+                  <th>Readings</th>
+                  <th>Referral</th>
+                </tr>
+              </thead>
+              <tbody id="patientTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Print signature block — standard sign-off for a Philippine
+             official report (Prepared by / Noted by), not just a footer
+             disclaimer, since a printed monitoring report is expected to
+             carry an accountable name, not only a system-generated note. -->
+        <div class="print-signature-block">
+          <div class="print-sig-col">
+            <div class="print-sig-line"></div>
+            <div class="print-sig-name" id="printPreparedBy">RHU Nurse</div>
+            <div class="print-sig-role">Prepared by</div>
+          </div>
+          <div class="print-sig-col">
+            <div class="print-sig-line"></div>
+            <div class="print-sig-name">Municipal Health Officer</div>
+            <div class="print-sig-role">Noted by</div>
+          </div>
+        </div>
+
+        <!-- Print footer -->
+        <div class="print-footer">
+          DiaCare RHU Libon — For monitoring purposes only. Not a medical diagnosis tool.
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+  <script src="../shared/stats.js"></script>
+  <script src="../shared/notifications.js"></script>
+  <script src="../shared/profile.js"></script>
+  <script type="module" src="../shared/logout-confirm.js"></script>
+  <script src="../shared/patients-data.js"></script>
+  <!-- PDF export — renders the report exactly as designed (masthead,
+       logos, signature block) into a downloadable file, with none of
+       the browser's own print-dialog header/footer clutter since this
+       never goes through window.print() at all. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="reports.js"></script>
+</body>
+
+</html>

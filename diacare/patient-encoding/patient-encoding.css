@@ -1,0 +1,827 @@
+/* ================================================================
+   DiaCare RHU Libon — Patient Encoding CSS
+   Page-specific styles only. Shared tokens, top nav, cards,
+   buttons, modal chrome, and toast all live in ../shared/theme.css
+   ================================================================ */
+
+/* Hero band height — tuned to sit behind the page title and dip
+   slightly into the top of the form/side panels below it. */
+.content {
+  --hero-h: 130px;
+}
+
+/* ── Page Header ── */
+.page-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-hdr-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.plan-b-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--status-info-bg);
+  border: 1px solid rgba(59, 130, 246, .2);
+  color: var(--status-info);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+/* ── Mission Context Bar ── */
+.mission-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 18px;
+  background: var(--brand-50);
+  border: 1px solid var(--brand-200);
+  border-radius: var(--radius-lg);
+  margin-bottom: 22px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.mission-context-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mission-context-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.mission-context-meta {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+.mission-encoded-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-700);
+  background: var(--brand-100);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+.mission-encoded-count span {
+  font-family: var(--font-mono);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--brand-800);
+}
+
+/* ── Encoding Layout ── */
+.encoding-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 22px;
+  align-items: start;
+}
+
+/* ── Form Panel ── */
+.enc-form-panel {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* Form Section */
+.enc-section {
+  padding: 24px 26px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.enc-section:last-of-type {
+  border-bottom: none;
+}
+
+.enc-section-hdr {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.enc-section-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 3px 8px rgba(34, 168, 102, .3);
+}
+
+.enc-section-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.enc-section-sub {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+}
+
+/* Field Grid */
+.enc-grid {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.enc-grid+.enc-grid {
+  margin-top: 16px;
+}
+
+.enc-grid--2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.enc-grid--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.enc-field--span2 {
+  grid-column: span 2;
+}
+
+/* Field */
+.enc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.enc-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.required {
+  color: var(--status-critical);
+}
+
+.enc-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.enc-bp-wrap .enc-input-wrap {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.enc-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 13px;
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  color: var(--ink);
+  outline: none;
+  background: var(--brand-50);
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+
+.enc-input:focus {
+  border-color: var(--brand-500);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(34, 168, 102, .14);
+}
+
+.enc-input.error {
+  border-color: var(--status-critical);
+  background: var(--status-critical-bg);
+}
+
+.enc-input--unit {
+  padding-right: 54px;
+}
+
+.enc-unit {
+  position: absolute;
+  right: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.enc-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Blood Pressure row */
+.enc-bp-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.enc-bp-slash {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+/* Field error */
+.enc-error {
+  font-size: 11.5px;
+  color: var(--status-critical);
+  font-weight: 500;
+}
+
+/* Indicator (glucose / BP live feedback) */
+.enc-indicator {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.enc-indicator--critical {
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+  border: 1px solid rgba(208, 54, 47, .2);
+}
+
+.enc-indicator--warning {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+  border: 1px solid rgba(202, 138, 4, .2);
+}
+
+.enc-indicator--normal {
+  background: var(--status-good-bg);
+  color: var(--status-good);
+  border: 1px solid rgba(22, 163, 74, .2);
+}
+
+/* Referral (also reused as-is for the New/Existing Patient mode toggle) */
+.enc-referral {
+  background: var(--brand-50);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.enc-mode-toggle {
+  margin-bottom: 18px;
+}
+
+/* Standalone field between the mode toggle and the first field grid
+   below it — .enc-field itself carries no margin (spacing normally
+   comes from its parent .enc-grid's gap), so this needs its own. */
+#existingPatientFieldWrap {
+  margin-bottom: 16px;
+}
+
+.enc-referral-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.enc-referral-label i {
+  color: var(--brand-500);
+}
+
+.enc-referral-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.enc-ref-option input {
+  display: none;
+}
+
+.enc-ref-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 11px;
+  border: 1.5px solid var(--border);
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.enc-ref-option input:checked+.enc-ref-box {
+  border-color: var(--brand-500);
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.enc-ref-box:hover {
+  border-color: var(--brand-300);
+  color: var(--ink);
+}
+
+/* Form Actions */
+.enc-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 26px;
+  background: var(--brand-50);
+  border-top: 1px solid var(--border-soft);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.enc-actions-right {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── Side Panel ── */
+.enc-side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Risk preview */
+.enc-risk-body {
+  min-height: 80px;
+}
+
+.enc-risk-empty {
+  text-align: center;
+  padding: 20px 10px;
+  color: var(--ink-faint);
+}
+
+.enc-risk-empty i {
+  font-size: 26px;
+  margin-bottom: 10px;
+  display: block;
+  color: var(--border);
+}
+
+.enc-risk-empty p {
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.enc-risk-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.enc-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.enc-risk-badge--critical {
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+}
+
+.enc-risk-badge--warning {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+
+.enc-risk-badge--normal {
+  background: var(--status-good-bg);
+  color: var(--status-good);
+}
+
+.enc-risk-detail {
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* Reference list */
+.enc-ref-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.enc-ref-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.enc-ref-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.enc-ref-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.enc-ref-val {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+}
+
+.enc-ref-divider {
+  height: 1px;
+  background: var(--border-soft);
+  margin: 4px 0;
+}
+
+/* Session list */
+.enc-session-badge {
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-500);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.enc-session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.enc-session-empty {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  text-align: center;
+  padding: 12px 0;
+}
+
+.enc-session-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  background: var(--brand-50);
+  border-radius: 11px;
+  border: 1px solid var(--border-soft);
+}
+
+.enc-session-av {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.enc-session-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.enc-session-glc {
+  font-size: 11.5px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+/* Confirm modal (Reset Form) */
+.confirm-icon {
+  font-size: 42px;
+  color: var(--status-critical);
+  margin-bottom: 14px;
+}
+
+.confirm-text {
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+/* Success Modal */
+.enc-success-body {
+  padding: 36px 28px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.enc-success-icon {
+  font-size: 52px;
+  color: var(--brand-500);
+}
+
+.enc-success-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.enc-success-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.enc-success-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.btn-block {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .encoding-layout {
+    grid-template-columns: 1fr 280px;
+  }
+}
+
+@media (max-width: 900px) {
+  .encoding-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+
+  .enc-grid--2,
+  .enc-grid--3 {
+    grid-template-columns: 1fr;
+  }
+
+  .enc-field--span2 {
+    grid-column: span 1;
+  }
+
+  .page-hdr {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .enc-bp-wrap {
+    flex-direction: column;
+  }
+
+  .enc-bp-slash {
+    display: none;
+  }
+
+  .enc-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .enc-actions-right {
+    flex-direction: column;
+  }
+}
+
+/* ================================================================
+   CUSTOM BARANGAY DROPDOWN
+   ================================================================ */
+.custom-select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 13px;
+  background: var(--brand-50);
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.custom-select-trigger:focus,
+.custom-select-trigger.open {
+  border-color: var(--brand-500);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(34, 168, 102, .14);
+  outline: none;
+}
+
+.custom-select-trigger.error {
+  border-color: var(--status-critical);
+  background: var(--status-critical-bg);
+}
+
+/* Locked while an Existing Patient is selected — barangay comes from
+   their record instead of being re-picked here. */
+.custom-select-trigger.disabled {
+  cursor: not-allowed;
+  opacity: .65;
+}
+
+.custom-select-trigger span {
+  color: var(--ink-faint);
+  flex: 1;
+}
+
+.custom-select-trigger.has-value span {
+  color: var(--ink);
+}
+
+.custom-select-arrow {
+  font-size: 11px;
+  color: var(--ink-faint);
+  transition: transform .2s;
+  flex-shrink: 0;
+}
+
+.custom-select-arrow.open {
+  transform: rotate(180deg);
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 13px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+  z-index: 200;
+  overflow: hidden;
+  animation: dropIn .18s ease;
+}
+
+@keyframes dropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.custom-select-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.custom-select-search-wrap i {
+  font-size: 12px;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+.custom-select-search {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--ink);
+  background: transparent;
+}
+
+.custom-select-search::placeholder {
+  color: var(--ink-faint);
+}
+
+.custom-select-list {
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+.custom-select-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-select-list::-webkit-scrollbar-thumb {
+  background: var(--brand-200);
+  border-radius: 10px;
+}
+
+.custom-select-list li {
+  padding: 9px 16px;
+  font-size: 13.5px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background .1s;
+  font-family: var(--font-ui);
+}
+
+.custom-select-list li:hover {
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.custom-select-list li.selected {
+  background: var(--brand-50);
+  color: var(--brand-700);
+  font-weight: 700;
+}
+
+.custom-select-list li.no-results {
+  color: var(--ink-faint);
+  font-size: 13px;
+  text-align: center;
+  padding: 16px;
+  cursor: default;
+}
+
+.custom-select-list li.no-results:hover {
+  background: transparent;
+}

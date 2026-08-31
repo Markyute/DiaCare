@@ -1,0 +1,737 @@
+/* ================================================================
+   DiaCare RHU Libon — Personnel / User Management CSS
+   ================================================================ */
+
+.page-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.btn-add-personnel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 11px;
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+  box-shadow: 0 3px 12px rgba(34, 168, 102, .28);
+  flex-shrink: 0;
+}
+
+.btn-add-personnel:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 18px rgba(34, 168, 102, .4);
+}
+
+/* ── Stat Ribbon ── */
+.stat-ribbon {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 16px;
+  background: var(--card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
+  transition: all .2s;
+  animation: cardIn .4s ease both;
+}
+
+.stat-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.chip-lbl {
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.chip-val {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1;
+  margin: 3px 0;
+  font-family: var(--font-mono);
+}
+
+.chip-delta {
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+
+.chip-delta.up {
+  color: var(--status-good);
+}
+
+.chip-delta.down {
+  color: var(--status-critical);
+}
+
+/* ── Filter Bar ── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  background: var(--card);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-wrap i {
+  position: absolute;
+  left: 11px;
+  font-size: 12px;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--bg-alt);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.search-input:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(34, 168, 102, .1);
+  background: var(--card);
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.filter-pills {
+  display: flex;
+  gap: 4px;
+}
+
+.pill {
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border);
+  background: var(--bg-alt);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+
+.pill.active {
+  background: var(--brand-600);
+  border-color: var(--brand-600);
+  color: #fff;
+}
+
+.pill-teal.active {
+  background: #0f766e;
+  border-color: #0f766e;
+  color: #fff;
+}
+
+.pill-blue.active {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.pill-amber.active {
+  background: var(--status-warning);
+  border-color: var(--status-warning);
+  color: #fff;
+}
+
+.pill-green.active {
+  background: var(--status-good);
+  border-color: var(--status-good);
+  color: #fff;
+}
+
+.pill-red.active {
+  background: var(--status-critical);
+  border-color: var(--status-critical);
+  color: #fff;
+}
+
+.pill:hover:not(.active) {
+  border-color: var(--brand-300);
+  color: var(--ink);
+  background: var(--brand-50);
+}
+
+.filter-count {
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* ── Personnel Table ── */
+.table-card {
+  background: var(--card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-bottom: 32px;
+  animation: cardIn .4s ease both;
+}
+
+.personnel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.personnel-table thead th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--ink-faint);
+  background: var(--brand-50);
+  border-bottom: 1px solid var(--border-soft);
+  white-space: nowrap;
+}
+
+.personnel-table tbody td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: middle;
+}
+
+.personnel-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.personnel-table tbody tr {
+  transition: background .12s;
+}
+
+.personnel-table tbody tr:hover {
+  background: var(--brand-50);
+}
+
+.personnel-table tbody tr.row-inactive {
+  opacity: .6;
+}
+
+/* Personnel cell */
+.prs-cell {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 180px;
+}
+
+.prs-av {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.prs-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.prs-email {
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin-top: 1px;
+}
+
+/* Role badge */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.role-badge--nurse {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+.role-badge--bhw {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.role-badge--admin {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+/* Status badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.status-badge--active {
+  background: var(--status-good-bg);
+  color: var(--status-good);
+}
+
+.status-badge--inactive {
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Action buttons */
+.action-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.btn-edit:hover {
+  border-color: var(--brand-500);
+  color: var(--brand-700);
+  background: var(--brand-50);
+}
+
+.btn-deactivate {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--status-critical);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  border-color: var(--status-critical-bg);
+}
+
+.btn-deactivate:hover {
+  background: var(--status-critical-bg);
+  border-color: var(--status-critical);
+}
+
+.btn-reactivate {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--status-good-bg);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--status-good);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.btn-reactivate:hover {
+  background: var(--status-good-bg);
+  border-color: var(--status-good);
+}
+
+/* Table empty */
+.table-empty {
+  padding: 56px;
+  text-align: center;
+  color: var(--ink-faint);
+}
+
+.table-empty i {
+  font-size: 36px;
+  margin-bottom: 14px;
+  display: block;
+}
+
+.table-empty p {
+  font-size: 14px;
+}
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.modal-card {
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .15);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  /* See theme.css's .modal-card for why this doesn't scroll itself
+     anymore — Chrome doesn't clip a custom ::-webkit-scrollbar to a
+     border-radius, so the scroll moved to .modal-body instead. */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalIn .28s cubic-bezier(.22, 1, .36, 1);
+}
+
+.modal-card--sm {
+  max-width: 400px;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(.95) translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.modal-sub {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+}
+
+.modal-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+  color: var(--ink-soft);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+}
+
+.modal-close:hover {
+  background: var(--status-critical-bg);
+  border-color: var(--status-critical);
+  color: var(--status-critical);
+}
+
+.modal-body {
+  padding: 20px 22px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border-soft);
+}
+
+/* Modal field grid */
+.modal-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.mfield-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mfield-span2 {
+  grid-column: span 2;
+}
+
+.mfield-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.required {
+  color: var(--status-critical);
+}
+
+.mfield-input {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: 11px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--brand-50);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+.mfield-input:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(34, 168, 102, .1);
+  background: var(--card);
+}
+
+.mfield-input.error {
+  border-color: var(--status-critical);
+}
+
+.mfield-error {
+  font-size: 11.5px;
+  color: var(--status-critical);
+  font-weight: 500;
+}
+
+/* Password input */
+.pwd-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pwd-wrap .mfield-input {
+  padding-right: 38px;
+}
+
+.pwd-toggle {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-faint);
+  font-size: 13px;
+  padding: 4px;
+  transition: color .15s;
+}
+
+.pwd-toggle:hover {
+  color: var(--brand-600);
+}
+
+/* Confirm modal */
+.confirm-icon {
+  font-size: 42px;
+  color: var(--status-critical);
+  margin-bottom: 14px;
+}
+
+.confirm-text {
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+/* Danger button */
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #e05252, var(--status-critical));
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+}
+
+.btn-danger:hover {
+  opacity: .88;
+}
+
+/* ── Animations ── */
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .modal-field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mfield-span2 {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filter-count {
+    margin-left: 0;
+  }
+
+  .page-hdr {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .stat-ribbon {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+/* ── New-account temp-password checkbox (Add/Edit Personnel modal) ── */
+.mfield-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.mfield-checkbox-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand-500, #0b5357);
+  cursor: pointer;
+}
+
+.mfield-hint {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-faint, #6b7280);
+  line-height: 1.4;
+}

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiaCare RHU Libon — High-Risk Alerts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../shared/theme.css" />
+  <link rel="stylesheet" href="../shared/patient-detail-modal.css" />
+  <link rel="stylesheet" href="high-risk.css" />
+  <script type="module" src="../shared/auth-guard.js"></script>
+</head>
+
+<body>
+  <a href="#main" class="skip-link">Skip to main content</a>
+  <div class="app-shell">
+
+    <!-- ═══ TOP NAV ═══ -->
+    <header class="topnav" id="topnav">
+      <div class="topnav-inner">
+        <a href="../dashboard/dashboard.html" class="topnav-brand">
+          <img src="../images/diacare-logo-new.png" alt="DiaCare Logo" class="topnav-logo" />
+          <span class="topnav-brand-text">
+            <span class="topnav-name"><span class="tn-name-dark">Dia</span><span
+                class="tn-name-brand">Care</span></span>
+            <span class="topnav-sub">RHU Libon</span>
+          </span>
+        </a>
+
+        <nav class="topnav-links">
+          <a href="../dashboard/dashboard.html" class="tn-item"><i
+              class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+          <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i
+              class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+          <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i
+              class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+          <a href="../trends/glucose-trends.html" class="tn-item"><i class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+          <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
+          <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+          <a href="../personnel/user-management.html" class="tn-item"><i class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+        </nav>
+
+        <div class="topnav-right">
+          <div class="tn-clock-wrap">
+            <div class="topbar-clock" id="topbarClock">--:--:--</div>
+            <div class="topbar-date" id="topbarDate">---</div>
+          </div>
+          <a href="../settings/settings.html" class="tn-icon-btn" title="Settings">
+            <i class="fa-solid fa-gear"></i>
+          </a>
+          <div class="tn-notif-wrap">
+            <button class="tn-icon-btn" id="notifTrigger" title="Notifications">
+              <i class="fa-solid fa-bell"></i>
+              <span class="tn-icon-badge" id="navBellBadge">0</span>
+            </button>
+            <div class="tn-notif-panel hidden" id="notifPanel">
+              <div class="tn-notif-hdr">
+                <span>Notifications</span>
+                <span class="tn-notif-count" id="notifCount">0 new</span>
+              </div>
+              <div class="tn-notif-list" id="notifList"></div>
+              <a href="../alerts/high-risk.html" class="tn-notif-footer">
+                View all alerts <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+          <button class="tn-user" id="navAvatarBtn" title="RHU Nurse — Field Personnel">
+            <div class="topbar-avatar" id="navAvatar">RN</div>
+            <div class="tn-user-info">
+              <span class="tn-user-name" id="navUserName">RHU Nurse</span>
+              <span class="tn-user-role" id="navUserRole">Field Personnel</span>
+            </div>
+          </button>
+        </div>
+
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" title="Toggle navigation menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+
+      <!-- Mobile nav panel -->
+      <div class="topnav-mobile-panel" id="mobileNavPanel">
+        <a href="../dashboard/dashboard.html" class="tn-item"><i
+            class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+        <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i
+            class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+        <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i
+            class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+        <a href="../trends/glucose-trends.html" class="tn-item"><i class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+        <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
+        <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+        <a href="../personnel/user-management.html" class="tn-item"><i class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+        <a href="../login/login.html" class="tn-item"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+      </div>
+    </header>
+
+    <!-- ═══ MAIN ═══ -->
+    <main class="content" id="main">
+
+      <!-- PAGE HEADER -->
+      <div class="page-hdr">
+        <div>
+          <h1 class="page-title">High-Risk Alerts</h1>
+          <p class="page-sub">Patients with critical glucose or blood pressure readings requiring immediate attention
+          </p>
+        </div>
+        <div class="page-hdr-actions">
+          <button class="btn-acknowledge-all" id="btnAcknowledgeAll">
+            <i class="fa-solid fa-check-double"></i> Acknowledge All
+          </button>
+          <button class="btn-refresh" id="btnRefresh">
+            <i class="fa-solid fa-rotate-right"></i> Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="alert-stat-ribbon">
+        <article class="alert-stat-chip chip-critical">
+          <div class="chip-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+          <div>
+            <div class="chip-lbl">Critical Alerts</div>
+            <div class="chip-val" id="statCritical">0</div>
+            <div class="chip-sub">Immediate action</div>
+          </div>
+        </article>
+        <article class="alert-stat-chip chip-warning">
+          <div class="chip-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div>
+            <div class="chip-lbl">At Risk</div>
+            <div class="chip-val" id="statAtRisk">0</div>
+            <div class="chip-sub">Monitor closely</div>
+          </div>
+        </article>
+        <article class="alert-stat-chip chip-missed">
+          <div class="chip-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          <div>
+            <div class="chip-lbl">Missed Logs</div>
+            <div class="chip-val" id="statMissed">0</div>
+            <div class="chip-sub">No reading today</div>
+          </div>
+        </article>
+        <article class="alert-stat-chip chip-acknowledged">
+          <div class="chip-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div>
+            <div class="chip-lbl">Acknowledged</div>
+            <div class="chip-val" id="statAcknowledged">0</div>
+            <div class="chip-sub">Reviewed today</div>
+          </div>
+        </article>
+      </div>
+
+      <!-- SEARCH + TAB TOOLBAR -->
+      <div class="alert-toolbar">
+        <div class="alert-search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" class="alert-search" id="alertSearch" autocomplete="off" placeholder="Search patient name or ID..." />
+        </div>
+        <div class="alert-tab-group">
+          <button class="alert-tab active" data-tab="critical">
+            <i class="fa-solid fa-circle-exclamation"></i> Critical
+            <span class="tab-count" id="tabCountCritical">0</span>
+          </button>
+          <button class="alert-tab" data-tab="atrisk">
+            <i class="fa-solid fa-triangle-exclamation"></i> At Risk
+            <span class="tab-count" id="tabCountAtRisk">0</span>
+          </button>
+          <button class="alert-tab" data-tab="missed">
+            <i class="fa-solid fa-clock-rotate-left"></i> Missed Log
+            <span class="tab-count" id="tabCountMissed">0</span>
+          </button>
+        </div>
+        <div class="alert-result-count" id="alertResultCount">Showing 0 alerts</div>
+      </div>
+
+      <!-- ALERT LIST -->
+      <div class="alert-list-wrap">
+        <div class="alert-list" id="alertList"></div>
+        <div class="alert-empty hidden" id="alertEmpty">
+          <i class="fa-solid fa-circle-check"></i>
+          <p id="alertEmptyMsg">No alerts in this category.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ── FLAG MODAL ── -->
+  <div class="modal-overlay hidden" id="flagModal">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-hdr">
+        <div>
+          <div class="modal-title">Flag for Follow-up</div>
+          <div class="modal-sub" id="flagPatientName">Patient name</div>
+        </div>
+        <button class="modal-close" id="flagModalClose" aria-label="Close modal" title="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="mfield-group">
+          <label class="mfield-label" for="flagReason">Follow-up Reason</label>
+          <select class="mfield-input" id="flagReason" title="Follow-up Reason">
+            <option value="">Select reason...</option>
+            <option>Persistent high glucose readings</option>
+            <option>Persistent low glucose (hypoglycemia)</option>
+            <option>Hypertension — needs medication review</option>
+            <option>Missed readings — needs monitoring</option>
+            <option>Patient needs clinic visit</option>
+            <option>Medication adjustment needed</option>
+            <option>Referral to specialist</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="mfield-group mb-0">
+          <label class="mfield-label" for="flagNotes">Notes (optional)</label>
+          <textarea class="mfield-input resize-y" id="flagNotes" rows="3" placeholder="Additional notes for follow-up..." title="Additional notes"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="flagModalCancel">Cancel</button>
+        <button class="btn btn-primary" id="flagModalConfirm">
+          <i class="fa-solid fa-flag"></i> Flag Patient
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="../shared/profile.js"></script>
+  <script type="module" src="../shared/logout-confirm.js"></script>
+  <script src="../shared/patients-data.js"></script>
+  <script src="../shared/patient-detail-modal.js"></script>
+  <script src="high-risk.js"></script>
+</body>
+
+</html>

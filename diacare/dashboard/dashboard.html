@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiaCare RHU Libon — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../shared/theme.css" />
+  <link rel="stylesheet" href="dashboard.css" />
+  <script type="module" src="../shared/auth-guard.js"></script>
+</head>
+
+<body>
+  <a href="#main" class="skip-link">Skip to main content</a>
+  <div class="app-shell">
+
+    <!-- ═══ TOP NAV ═══ -->
+    <header class="topnav" id="topnav">
+      <div class="topnav-inner">
+        <a href="dashboard.html" class="topnav-brand">
+          <img src="../images/diacare-logo-new.png" alt="DiaCare Logo" class="topnav-logo" />
+          <span class="topnav-brand-text">
+            <span class="topnav-name"><span class="tn-name-dark">Dia</span><span
+                class="tn-name-brand">Care</span></span>
+            <span class="topnav-sub">RHU Libon</span>
+          </span>
+        </a>
+
+        <nav class="topnav-links">
+          <a href="dashboard.html" class="tn-item active" aria-current="page"><i
+              class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+          <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i
+              class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+          <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i
+              class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+          <a href="../trends/glucose-trends.html" class="tn-item"><i
+              class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+          <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i
+              class="fa-solid fa-brain"></i><span>Risk</span></a>
+          <a href="../reports/reports.html" class="tn-item"><i
+              class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+          <a href="../personnel/user-management.html" class="tn-item"><i
+              class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+        </nav>
+
+        <div class="topnav-right">
+          <div class="tn-clock-wrap">
+            <div class="topbar-clock" id="topbarClock">--:--:--</div>
+            <div class="topbar-date" id="topbarDate">---</div>
+          </div>
+          <a href="../settings/settings.html" class="tn-icon-btn" title="Settings">
+            <i class="fa-solid fa-gear"></i>
+          </a>
+          <div class="tn-notif-wrap">
+            <button class="tn-icon-btn" id="notifTrigger" title="Notifications">
+              <i class="fa-solid fa-bell"></i>
+              <span class="tn-icon-badge" id="navBellBadge">0</span>
+            </button>
+            <div class="tn-notif-panel hidden" id="notifPanel">
+              <div class="tn-notif-hdr">
+                <span>Notifications</span>
+                <span class="tn-notif-count" id="notifCount">0 new</span>
+              </div>
+              <div class="tn-notif-list" id="notifList"></div>
+              <a href="../alerts/high-risk.html" class="tn-notif-footer">
+                View all alerts <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+          <button class="tn-user" id="navAvatarBtn" title="RHU Nurse — Field Personnel">
+            <div class="topbar-avatar" id="navAvatar">RN</div>
+            <div class="tn-user-info">
+              <span class="tn-user-name" id="navUserName">RHU Nurse</span>
+              <span class="tn-user-role" id="navUserRole">Field Personnel</span>
+            </div>
+          </button>
+        </div>
+
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" title="Toggle navigation menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+
+      <!-- Mobile nav panel -->
+      <div class="topnav-mobile-panel" id="mobileNavPanel">
+        <a href="dashboard.html" class="tn-item active" aria-current="page"><i
+            class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+        <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i
+            class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+        <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i
+            class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+        <a href="../trends/glucose-trends.html" class="tn-item"><i
+            class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+        <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i
+            class="fa-solid fa-brain"></i><span>Risk</span></a>
+        <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+        <a href="../personnel/user-management.html" class="tn-item"><i
+            class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+        <a href="../login/login.html" class="tn-item"><i
+            class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+      </div>
+    </header>
+
+    <!-- ═══ MAIN ═══ -->
+    <main class="content" id="main">
+
+      <!-- PAGE HEADER -->
+      <div class="page-hdr">
+        <div>
+          <h1 class="page-title" id="greetingTitle">Hello, RHU Nurse</h1>
+          <p class="page-sub" id="greetingSub">Here's what's happening across RHU Libon today.</p>
+        </div>
+      </div>
+
+      <!-- ── DATA SOURCE STATUS — DiaCare monitors continuously, so there's
+           no "start/stop" workflow; this just shows both intake channels
+           are live and being combined. ── -->
+      <div class="mission-banner mission-idle" id="missionIdle">
+        <div class="mission-banner-left">
+          <span class="mission-live-badge">Monitoring Active</span>
+          <span class="mission-banner-title">Continuous patient monitoring across RHU Libon</span>
+          <div class="mission-banner-meta">
+            <span><i class="fa-solid fa-clock-rotate-left"></i> Last submission: <span id="lastMissionInfo">—</span></span>
+            <span><i class="fa-solid fa-map-location-dot"></i> <span id="barangaysReachedInfo">0</span> barangays with active patients</span>
+          </div>
+          <div class="source-strip">
+            <div class="source-item source-app">
+              <i class="fa-solid fa-mobile-screen"></i>
+              <span>App Submissions — <strong>Live</strong></span>
+              <span class="source-dot source-dot--green"></span>
+            </div>
+            <div class="source-item source-manual">
+              <i class="fa-solid fa-keyboard"></i>
+              <span>Manual Encoding</span>
+              <span class="source-dot source-dot--blue"></span>
+            </div>
+            <div class="source-note">
+              <i class="fa-solid fa-circle-info"></i>
+              <span>Data from both sources is combined and displayed together</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── CRITICAL ALERT STRIP (shown only when patients need attention) ── -->
+      <a href="../patient-monitoring/patient-monitoring.html" class="critical-strip hidden" id="criticalStrip"
+        aria-label="Critical alert: patients need immediate attention today. Review now.">
+        <div class="critical-strip-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="critical-strip-text">
+          <strong id="criticalStripCount">0 patients</strong> need immediate attention today — glucose or blood pressure
+          readings are in the critical range.
+        </div>
+        <span class="critical-strip-cta">Review now <i class="fa-solid fa-arrow-right"></i></span>
+      </a>
+
+      <!-- ── PENDING APPROVALS STRIP — its own separate banner, shown only
+           when the queue isn't empty, sitting alongside (not replacing) the
+           critical alert strip above. Clicking it goes to Patient Monitoring,
+           where the actual Approve/Reject list lives — this is a heads-up,
+           not a duplicate of that control. ── -->
+      <a href="../patient-monitoring/patient-monitoring.html" class="pending-strip hidden" id="pendingStrip"
+        aria-label="Patients awaiting approval. Review now.">
+        <div class="pending-strip-icon"><i class="fa-solid fa-user-clock"></i></div>
+        <div class="pending-strip-text">
+          <strong id="pendingStripCount">0 patients</strong> submitted by BHWs are awaiting your approval — they won't
+          appear in monitoring until reviewed.
+        </div>
+        <span class="pending-strip-cta">Review now <i class="fa-solid fa-arrow-right"></i></span>
+      </a>
+
+      <!-- ── ALL-TIME REFERENCE STATS ── -->
+      <div class="section-label-row">
+        <span class="section-eyebrow">ALL-TIME REFERENCE</span>
+        <span class="section-date">All patients and barangays monitored to date</span>
+      </div>
+
+      <div class="stat-ribbon">
+        <article class="stat-chip chip-green">
+          <div class="chip-icon"><i class="fa-solid fa-map-location-dot"></i></div>
+          <div>
+            <div class="chip-lbl">Barangays Reached</div>
+            <div class="chip-val" id="statBarangaysReached">0</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-teal">
+          <div class="chip-icon"><i class="fa-solid fa-users"></i></div>
+          <div>
+            <div class="chip-lbl">Total Patients</div>
+            <div class="chip-val" id="statTotalPatients">0</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-blue">
+          <div class="chip-icon"><i class="fa-solid fa-mobile-screen"></i></div>
+          <div>
+            <div class="chip-lbl">App Submissions</div>
+            <div class="chip-val" id="statAppSubmissions">0</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-amber">
+          <div class="chip-icon"><i class="fa-solid fa-keyboard"></i></div>
+          <div>
+            <div class="chip-lbl">Manual Encoded</div>
+            <div class="chip-val" id="statManualEncoded">0</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-red">
+          <div class="chip-icon"><i class="fa-solid fa-flag"></i></div>
+          <div>
+            <div class="chip-lbl">Follow-up Referrals</div>
+            <div class="chip-val" id="statReferrals">0</div>
+          </div>
+        </article>
+      </div>
+
+      <!-- ── TOP ROW: Risk Distribution + Recent Barangay Activity, side by side ── -->
+      <div class="dash-top-row">
+
+        <!-- Risk Distribution -->
+        <div class="dash-card">
+          <div class="dash-card-hdr">
+            <div>
+              <div class="dash-card-title">
+                <i class="fa-solid fa-chart-pie"></i> Risk Distribution
+              </div>
+              <div class="dash-card-sub">Today's patient risk breakdown</div>
+            </div>
+          </div>
+          <div class="donut-body">
+            <div class="donut-wrap">
+              <canvas id="donutChart" role="img"
+                aria-label="Donut chart of today's patient risk breakdown by high risk, at risk, and normal"></canvas>
+              <div class="donut-center">
+                <div class="donut-num" id="donutTotal">0</div>
+                <div class="donut-sub">Patients</div>
+              </div>
+            </div>
+            <div class="donut-legend" id="donutLegend"></div>
+          </div>
+        </div>
+
+        <!-- Recent Barangay Activity -->
+        <div class="dash-card">
+          <div class="dash-card-hdr">
+            <div>
+              <div class="dash-card-title">
+                <i class="fa-solid fa-clock-rotate-left"></i> Recent Barangay Activity
+              </div>
+              <div class="dash-card-sub">Barangays with the most recent patient submissions</div>
+            </div>
+          </div>
+          <div class="mission-list" id="missionList"></div>
+        </div>
+
+      </div>
+
+      <!-- ── Recent Patient Readings — full width, below the top row ── -->
+      <div class="dash-card dash-readings-card">
+        <div class="dash-card-hdr">
+          <div>
+            <div class="dash-card-title">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              Recent Patient Readings
+            </div>
+            <div class="dash-card-sub">
+              Latest glucose and blood pressure readings from all sources
+            </div>
+          </div>
+          <a href="../patient-monitoring/patient-monitoring.html" class="dash-view-all">
+            View all <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+        <div class="recent-table-wrap">
+          <table class="recent-table">
+            <caption class="sr-only">Recent patient glucose and blood pressure readings, all sources</caption>
+            <thead>
+              <tr>
+                <th>Patient</th>
+                <th>Glucose</th>
+                <th>Blood Pressure</th>
+                <th>Status</th>
+                <th>Source</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="recentTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast hidden" id="toast"></div>
+
+  <script src="../shared/notifications.js"></script>
+  <script src="../shared/profile.js"></script>
+  <script type="module" src="../shared/logout-confirm.js"></script>
+  <script src="../shared/patients-data.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+
+</html>

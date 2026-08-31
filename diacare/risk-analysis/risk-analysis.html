@@ -1,0 +1,240 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiaCare RHU Libon — Risk Analysis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../shared/theme.css" />
+  <link rel="stylesheet" href="../shared/patient-detail-modal.css" />
+  <link rel="stylesheet" href="risk-analysis.css" />
+  <script type="module" src="../shared/auth-guard.js"></script>
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="topnav" id="topnav">
+    <div class="topnav-inner">
+      <a href="../dashboard/dashboard.html" class="topnav-brand">
+        <img src="../images/diacare-logo-new.png" alt="DiaCare" class="topnav-logo" />
+        <span class="topnav-brand-text">
+          <span class="topnav-name"><span class="tn-name-dark">Dia</span><span class="tn-name-brand">Care</span></span>
+          <span class="topnav-sub">RHU Libon</span>
+        </span>
+      </a>
+      <nav class="topnav-links">
+        <a href="../dashboard/dashboard.html" class="tn-item"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+        <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+        <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+        <a href="../trends/glucose-trends.html" class="tn-item"><i class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+        <a href="../risk-analysis/risk-analysis.html" class="tn-item active">
+  <i class="fa-solid fa-brain"></i><span>Risk</span>
+</a>
+        <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+        <a href="../personnel/user-management.html" class="tn-item"><i class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+      </nav>
+      <div class="topnav-right">
+        <div class="tn-clock-wrap">
+          <div class="topbar-clock" id="topbarClock">--:--:--</div>
+          <div class="topbar-date" id="topbarDate">---</div>
+        </div>
+        <a href="../settings/settings.html" class="tn-icon-btn" title="Settings" aria-label="Settings">
+          <i class="fa-solid fa-gear"></i>
+        </a>
+        <div class="tn-notif-wrap">
+          <button class="tn-icon-btn" id="notifTrigger" title="Notifications">
+            <i class="fa-solid fa-bell"></i>
+            <span class="tn-icon-badge" id="navBellBadge">0</span>
+          </button>
+          <div class="tn-notif-panel hidden" id="notifPanel">
+            <div class="tn-notif-hdr">
+              <span>Notifications</span>
+              <span class="tn-notif-count" id="notifCount">0 new</span>
+            </div>
+            <div class="tn-notif-list" id="notifList"></div>
+            <a href="../alerts/high-risk.html" class="tn-notif-footer">
+              View all alerts <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+        <button class="tn-user" title="User Profile" aria-label="User Profile">
+          <div class="topbar-avatar">RN</div>
+          <div class="tn-user-info">
+            <span class="tn-user-name">RHU Nurse</span>
+            <span class="tn-user-role">Field Personnel</span>
+          </div>
+        </button>
+      </div>
+      <button class="menu-toggle" id="menuToggle" title="Toggle Navigation Menu" aria-label="Toggle Navigation Menu"><i class="fa-solid fa-bars"></i></button>
+    </div>
+    <div class="topnav-mobile-panel" id="mobileNavPanel">
+      <a href="../dashboard/dashboard.html" class="tn-item"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+      <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+      <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+      <a href="../trends/glucose-trends.html" class="tn-item"><i class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+      <a href="../risk-analysis/risk-analysis.html" class="tn-item active" aria-current="page"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
+      <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+      <a href="../personnel/user-management.html" class="tn-item"><i class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+      <a href="../login/login.html" class="tn-item"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- PAGE HEADER -->
+    <div class="page-hdr">
+      <div>
+        <h1 class="page-title">Risk Analysis</h1>
+        <p class="page-sub">Patient risk scores, barangay risk comparison, and early warning detection</p>
+      </div>
+      <div class="page-hdr-actions">
+        <button class="btn-export" id="btnExport">
+          <i class="fa-solid fa-file-csv"></i> Export CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stat-ribbon">
+      <article class="stat-chip chip-red">
+        <div class="chip-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+        <div>
+          <div class="chip-lbl">Highly At Risk</div>
+          <div class="chip-val" id="statHighRisk">0</div>
+          <div class="chip-delta down">Urgent</div>
+        </div>
+      </article>
+      <article class="stat-chip chip-amber">
+        <div class="chip-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div>
+          <div class="chip-lbl">At Risk</div>
+          <div class="chip-val" id="statAtRisk">0</div>
+          <div class="chip-delta down">Monitor</div>
+        </div>
+      </article>
+      <article class="stat-chip chip-green">
+        <div class="chip-icon"><i class="fa-solid fa-circle-check"></i></div>
+        <div>
+          <div class="chip-lbl">Normal</div>
+          <div class="chip-val" id="statNormal">0</div>
+          <div class="chip-delta up">Within range</div>
+        </div>
+      </article>
+      <article class="stat-chip chip-orange">
+        <div class="chip-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+        <div>
+          <div class="chip-lbl">Worsening</div>
+          <div class="chip-val" id="statWorsening">0</div>
+          <div class="chip-delta down">Trending up</div>
+        </div>
+      </article>
+      <article class="stat-chip chip-teal">
+        <div class="chip-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>
+        <div>
+          <div class="chip-lbl">Improving</div>
+          <div class="chip-val" id="statImproving">0</div>
+          <div class="chip-delta up">Trending down</div>
+        </div>
+      </article>
+    </div>
+
+    <!-- EARLY WARNING STRIP -->
+    <div class="early-warning-strip" id="earlyWarningStrip">
+      <div class="ew-icon"><i class="fa-solid fa-bell"></i></div>
+      <div class="ew-content">
+        <div class="ew-title">Early Warning — <span id="ewCount">0</span> patients are trending toward critical</div>
+        <div class="ew-sub">These patients are currently At Risk but their glucose readings are consistently increasing. Immediate monitoring recommended.</div>
+      </div>
+      <a href="../alerts/high-risk.html" class="ew-cta">
+        Review Alerts <i class="fa-solid fa-arrow-right"></i>
+      </a>
+    </div>
+
+    <!-- TWO COL: Charts -->
+    <div class="ra-two-col">
+
+      <!-- Barangay Risk Chart -->
+      <div class="ra-card">
+        <div class="ra-card-hdr">
+          <div>
+            <div class="ra-card-title"><i class="fa-solid fa-map-pin"></i> Barangay Risk Comparison</div>
+            <div class="ra-card-sub">Risk distribution per barangay — sorted by highest risk</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="barangayRiskChart"></canvas>
+        </div>
+        <div class="barangay-x-labels" id="barangayLabels"></div>
+      </div>
+
+      <!-- Risk Score Distribution Donut -->
+      <div class="ra-card">
+        <div class="ra-card-hdr">
+          <div>
+            <div class="ra-card-title"><i class="fa-solid fa-chart-pie"></i> Overall Risk Distribution</div>
+            <div class="ra-card-sub">Population risk breakdown</div>
+          </div>
+        </div>
+        <div class="donut-wrap">
+          <canvas id="riskDonut"></canvas>
+          <div class="donut-center">
+            <div class="donut-num" id="donutTotal">0</div>
+            <div class="donut-sub">Patients</div>
+          </div>
+        </div>
+        <div class="donut-legend" id="donutLegend"></div>
+      </div>
+
+    </div>
+
+    <!-- PATIENT RISK SCORE TABLE -->
+    <div class="ra-card ra-card--full">
+      <div class="ra-card-hdr">
+        <div>
+          <div class="ra-card-title"><i class="fa-solid fa-ranking-star"></i> Patient Risk Scores</div>
+          <div class="ra-card-sub">Ranked by risk score — includes current level and trend direction</div>
+        </div>
+        <div class="filter-pills">
+          <button class="pill active" data-filter="all">All</button>
+          <button class="pill pill-red"   data-filter="high">Highly At Risk</button>
+          <button class="pill pill-amber" data-filter="atrisk">At Risk</button>
+          <button class="pill pill-green" data-filter="normal">Normal</button>
+          <button class="pill pill-orange" data-filter="worsening">Worsening</button>
+        </div>
+      </div>
+
+      <div class="risk-table-wrap">
+        <table class="risk-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Patient</th>
+              <th>Barangay</th>
+              <th>Risk Score</th>
+              <th>Current Level</th>
+              <th>Avg Glucose</th>
+              <th>Latest BP</th>
+              <th>Trend</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="riskTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+<script src="../shared/notifications.js"></script>
+<script src="../shared/profile.js"></script>
+<script type="module" src="../shared/logout-confirm.js"></script>
+<script src="../shared/patients-data.js"></script>
+<script src="../shared/patient-detail-modal.js"></script>
+<script src="risk-analysis.js"></script>
+</body>
+</html>

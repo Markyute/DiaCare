@@ -1,0 +1,1669 @@
+/* ================================================================
+   DiaCare RHU Libon — Shared Theme
+   Green + white system used across Login, Dashboard, Patient
+   Monitoring, and every future page. One source of truth for
+   color, type, the horizontal top nav, and shared components
+   (cards, stat chips, buttons, badges, tables, modal, toast) so
+   every screen in the system looks and behaves the same way.
+   ================================================================ */
+
+:root {
+  /* Brand — green ramp, light → dark */
+  --brand-50: #eefdf4;
+  --brand-100: #d9f8e6;
+  --brand-200: #b0efcd;
+  --brand-300: #7fdfaf;
+  --brand-400: #46c887;
+  --brand-500: #22a866;
+  --brand-600: #178a53;
+  --brand-700: #106d42;
+  --brand-800: #0b5636;
+
+  /* Ink / neutrals — darkened for better readability */
+  --ink: #16241c;
+  --ink-soft: #3b5044;
+  --ink-faint: #5c7568;
+  --white: #ffffff;
+  --bg: #f5faf6;
+  --bg-alt: #eef8f1;
+  --border: #c8ddd0;
+  --border-soft: #dbeae1;
+  --card: #ffffff;
+  --neutral-bg: #eef1f2;
+  --neutral-text: #5b6670;
+
+  /* Top nav — deep green header (matches the brand mock: dark
+     header, light text, bright-green active pill) */
+  --nav-bg-1: #123b2a;
+  --nav-bg-2: #0a2418;
+  --nav-text: #eafcf1;
+  --nav-text-soft: #a9d2bc;
+
+  /* Status — reserved for meaning, never used as brand/decoration */
+  --status-good: #16a34a;
+  --status-good-bg: #eafcf1;
+  --status-warning: #c2760a;
+  --status-warning-bg: #fff6e6;
+  --status-critical: #d0362f;
+  --status-critical-bg: #fdecec;
+  --status-info: #2563eb;
+  --status-info-bg: #eaf1ff;
+  --status-violet: #7c5ce0;
+  --status-violet-bg: #f1ecfd;
+  --status-orange: #c2410c;
+  --status-orange-bg: #ffedd5;
+
+  /* Radii / shadow / spacing */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 4px 16px rgba(15, 40, 26, .12);
+  --shadow-md: 0 16px 36px rgba(15, 40, 26, .16);
+  --shadow-lg: 0 22px 50px rgba(15, 40, 26, .18);
+
+  /* Type */
+  --font-ui: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: #ffffff;
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: var(--font-ui);
+  cursor: pointer;
+}
+
+img {
+  max-width: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--brand-400);
+  border-radius: 10px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ================================================================
+   ACCESSIBILITY PRIMITIVES — shared across every page so keyboard
+   and screen-reader support stays consistent system-wide.
+   ================================================================ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--brand-700);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 0 0 10px 0;
+  font-weight: 700;
+  font-size: 13px;
+  z-index: 300;
+}
+
+.skip-link:focus {
+  left: 0;
+}
+
+:focus-visible {
+  outline: 3px solid var(--status-info);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ================================================================
+   APP SHELL — no more fixed sidebar; content simply flows under
+   the sticky top nav.
+   ================================================================ */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /* .content::before uses a 100vw full-bleed trick to escape the
+     centered/capped .content column — clip it here so it can't add
+     a horizontal scrollbar on platforms where 100vw includes the
+     scrollbar's own width. */
+  overflow-x: hidden;
+}
+
+.content {
+  padding: 24px clamp(16px, 3vw, 36px) 40px;
+  flex: 1;
+  width: 100%;
+  /* Caps card width on wide monitors so cards get real side gutters
+     instead of stretching edge to edge — applies to every page since
+     they all share this wrapper. */
+  max-width: 1440px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 0;
+  background: #ffffff;
+}
+
+/* Dark-green hero band behind the page header — bleeds down to about
+   the midpoint of the first card on the page (mission banner on the
+   dashboard, the stat ribbon elsewhere), then the rest of the page is
+   plain white. Height is tuned per-page via --hero-h.
+   .content itself is now capped to max-width and centered, so the
+   band can't just use left:0/right:0 — that would bound it to the
+   same inset column as the cards. left:50% + width:100vw + the
+   -50% translate re-centers it on the viewport instead, so it still
+   spans edge to edge behind the (now-inset) cards. */
+.content::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  height: var(--hero-h, 210px);
+  background: linear-gradient(135deg, var(--nav-bg-1), var(--nav-bg-2));
+  z-index: -1;
+}
+
+/* ================================================================
+   TOP NAV — replaces the old vertical sidebar. Logo left, flat
+   horizontal links center, utilities + profile right.
+   ================================================================ */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 0 rgba(15, 40, 26, .02);
+}
+
+.topnav-inner {
+  width: 100%;
+  height: 68px;
+  padding: 0 clamp(12px, 2vw, 28px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.topnav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.topnav-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+}
+
+.topnav-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.topnav-name {
+  font-size: 15.5px;
+  font-weight: 800;
+  letter-spacing: -.2px;
+  white-space: nowrap;
+}
+
+.tn-name-dark {
+  color: var(--ink);
+}
+
+.tn-name-brand {
+  color: var(--brand-600);
+}
+
+.topnav-sub {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+/* "safe center" centers the links in the space between the logo and
+   the profile controls (what "too near the logo" was asking for),
+   but automatically falls back to start-alignment instead of
+   clipping if the row ever gets too narrow to fit — that fallback
+   is what avoids reintroducing the "Dashboard"/"Personnel" cut-off
+   bug from plain `center`. */
+.topnav-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  justify-content: safe center;
+  gap: clamp(1px, 0.4vw, 6px);
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  -ms-overflow-style: none;
+}
+
+@supports (scrollbar-width: none) {
+  .topnav-links {
+    scrollbar-width: none;
+  }
+}
+
+.topnav-links::-webkit-scrollbar {
+  display: none;
+}
+
+.tn-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 11px;
+  border-radius: var(--radius-pill);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+
+.tn-item i {
+  font-size: 12px;
+  color: var(--ink-faint);
+  transition: color .15s;
+}
+
+.tn-item:hover {
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.tn-item:hover i {
+  color: var(--brand-600);
+}
+
+.tn-item.active {
+  background: var(--brand-600);
+  color: var(--white);
+  box-shadow: 0 6px 14px rgba(23, 138, 83, .28);
+}
+
+.tn-item.active i {
+  color: var(--white);
+}
+
+.tn-badge {
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.tn-badge-red {
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+}
+
+.tn-badge-blue {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+}
+
+.tn-item.active .tn-badge-red {
+  background: rgba(255, 255, 255, .22);
+  color: #fff;
+}
+
+.tn-item.active .tn-badge-blue {
+  background: rgba(255, 255, 255, .22);
+  color: #fff;
+}
+
+.topnav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.tn-clock-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.3;
+  padding-right: 6px;
+  margin-right: 2px;
+  border-right: 1px solid var(--border);
+}
+
+.topbar-clock {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.topbar-date {
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+
+.tn-icon-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: none;
+  background: var(--brand-50);
+  color: var(--brand-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all .15s;
+}
+
+.tn-icon-btn:hover {
+  background: var(--brand-100);
+}
+
+.tn-icon-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--status-critical);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+}
+
+.tn-user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 12px 4px 8px;
+  margin-left: 2px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-pill);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.tn-user:hover {
+  background: var(--brand-50);
+}
+
+.tn-user:active {
+  background: var(--brand-100);
+}
+
+.topbar-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.topbar-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tn-user-info {
+  display: none;
+  flex-direction: column;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.tn-user-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.tn-user-role {
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.menu-toggle {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: var(--brand-50);
+  color: var(--brand-700);
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.topnav-mobile-panel {
+  display: none;
+  flex-direction: column;
+  padding: 8px 14px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--white);
+}
+
+.topnav-mobile-panel .tn-item {
+  justify-content: flex-start;
+}
+
+.topnav.nav-open .topnav-mobile-panel {
+  display: flex;
+}
+
+@media (min-width: 1024px) {
+  .tn-user-info {
+    display: flex;
+  }
+}
+
+/* Free up room for the nav links before they'd have to scroll —
+   drop the clock first, then the name/role text, keeping just the
+   avatar and logout icon. Full nav stays on one line all the way
+   down to the 960px mobile-panel breakpoint. */
+@media (max-width: 1360px) {
+  .tn-clock-wrap {
+    display: none;
+  }
+}
+
+@media (max-width: 1180px) {
+  .tn-user-info {
+    display: none !important;
+  }
+}
+
+@media (max-width: 960px) {
+  .topnav-links {
+    display: none;
+  }
+
+  .tn-clock-wrap {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: flex;
+  }
+}
+
+/* ================================================================
+   TOP NAV — DARK THEME
+   Deep green header with light text and a bright-green active
+   pill. Re-pointing --ink/--ink-soft/--ink-faint inside .topnav
+   means every descendant rule that already reads those variables
+   (brand name, nav links, clock, user name/role) automatically
+   gets nav-appropriate colors with no per-rule rewrite needed.
+   ================================================================ */
+.topnav {
+  background: linear-gradient(135deg, var(--nav-bg-1), var(--nav-bg-2));
+  border-bottom: none;
+  box-shadow: 0 6px 24px rgba(4, 20, 12, .28);
+  --ink: var(--nav-text);
+  --ink-soft: var(--nav-text-soft);
+  --ink-faint: var(--nav-text-soft);
+}
+
+.topnav .topnav-logo {
+  background: #fff;
+  padding: 3px;
+}
+
+.topnav .tn-name-brand {
+  color: var(--brand-400);
+}
+
+.topnav .tn-item:hover {
+  background: rgba(255, 255, 255, .10);
+  color: #fff;
+}
+
+.topnav .tn-item:hover i {
+  color: #fff;
+}
+
+.topnav .tn-item.active {
+  background: var(--brand-500);
+  box-shadow: 0 6px 16px rgba(34, 168, 102, .45);
+}
+
+.topnav .tn-clock-wrap {
+  border-right: 1px solid rgba(255, 255, 255, .16);
+}
+
+.topnav .tn-icon-btn {
+  background: rgba(255, 255, 255, .10);
+  color: var(--nav-text);
+}
+
+.topnav .tn-icon-btn:hover {
+  background: rgba(255, 255, 255, .18);
+}
+
+.topnav .tn-user:hover {
+  background: rgba(255, 255, 255, .10);
+}
+
+.topnav .tn-user:active {
+  background: rgba(255, 255, 255, .16);
+}
+
+.topnav .topbar-avatar {
+  border: 2px solid rgba(255, 255, 255, .3);
+}
+
+.topnav .menu-toggle {
+  background: rgba(255, 255, 255, .10);
+  color: var(--nav-text);
+}
+
+.topnav-mobile-panel {
+  background: var(--nav-bg-2);
+  border-top: 1px solid rgba(255, 255, 255, .12);
+}
+
+/* ================================================================
+   NOTIFICATION DROPDOWN — lives on the bell icon; this is where
+   critical-alert info now surfaces instead of a nav link.
+   ================================================================ */
+.tn-notif-wrap {
+  position: relative;
+}
+
+.tn-notif-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 320px;
+  max-height: 380px;
+  overflow-y: auto;
+  background: var(--card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-soft);
+  z-index: 300;
+  animation: modalIn .2s ease;
+  /* The panel sits inside the dark .topnav, which redefines --ink/-soft/
+     -faint to light nav colors so text reads on the dark green background.
+     This panel itself is a white card, so those tokens must be reset back
+     to their normal dark-on-white values here — otherwise every label
+     inside inherits near-invisible light-on-white text. */
+  --ink: #16241c;
+  --ink-soft: #3b5044;
+  --ink-faint: #5c7568;
+}
+
+.tn-notif-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.tn-notif-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--status-critical);
+  background: var(--status-critical-bg);
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+}
+
+.tn-notif-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.tn-notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-soft);
+  transition: background .15s;
+}
+
+.tn-notif-item:last-child {
+  border-bottom: none;
+}
+
+.tn-notif-item:hover {
+  background: var(--brand-50);
+}
+
+a.tn-notif-item {
+  cursor: pointer;
+}
+
+.tn-notif-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+}
+
+.tn-notif-icon--critical {
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+}
+
+.tn-notif-icon--warning {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+
+.tn-notif-icon--missed {
+  background: var(--bg-alt);
+  color: var(--ink-faint);
+}
+
+.tn-notif-icon--info {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+}
+
+.tn-notif-icon--success {
+  background: var(--status-good-bg);
+  color: var(--status-good);
+}
+
+.tn-notif-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.tn-notif-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.tn-notif-time {
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+}
+
+.tn-notif-empty {
+  padding: 30px 16px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+}
+
+.tn-notif-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand-700);
+  background: var(--brand-50);
+  transition: background .15s;
+}
+
+.tn-notif-footer:hover {
+  background: var(--brand-100);
+}
+
+/* ================================================================
+   PAGE HEADER
+   ================================================================ */
+.page-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.page-title {
+  font-size: 25px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -.4px;
+}
+
+.page-sub {
+  font-size: 13px;
+  color: var(--nav-text-soft);
+  margin-top: 4px;
+}
+
+.page-hdr-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   BUTTONS
+   ================================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  transition: all .2s;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(23, 138, 83, .3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(23, 138, 83, .38);
+}
+
+.btn-secondary {
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+.btn-secondary:hover {
+  background: var(--brand-100);
+}
+
+.btn-outline {
+  background: var(--white);
+  border: 1px solid var(--border);
+  color: var(--ink-soft);
+}
+
+.btn-outline:hover {
+  background: var(--bg-alt);
+  border-color: var(--brand-300);
+  color: var(--brand-700);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ea6b62, var(--status-critical));
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(208, 54, 47, .28);
+}
+
+.btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(208, 54, 47, .36);
+}
+
+/* ================================================================
+   SECTION LABEL ROW
+   ================================================================ */
+.section-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--brand-700);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.section-date {
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+
+/* ================================================================
+   STAT RIBBON — shared everywhere KPI chips appear
+   ================================================================ */
+.stat-ribbon {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 17px 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: all .25s;
+  animation: cardIn .4s ease both;
+}
+
+.stat-chip:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.chip-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.chip-green .chip-icon {
+  background: var(--brand-100);
+  color: var(--brand-700);
+}
+
+.chip-teal .chip-icon {
+  background: #dcf7f1;
+  color: #0f7a6a;
+}
+
+.chip-blue .chip-icon {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+}
+
+.chip-red .chip-icon {
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+}
+
+.chip-amber .chip-icon {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+
+.chip-purple .chip-icon {
+  background: var(--status-violet-bg);
+  color: var(--status-violet);
+}
+
+.chip-orange .chip-icon {
+  background: var(--status-orange-bg);
+  color: var(--status-orange);
+}
+
+.chip-lbl {
+  font-size: 10.5px;
+  color: var(--ink-soft);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.chip-val {
+  font-size: 23px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
+  margin: 3px 0;
+  font-family: var(--font-mono);
+}
+
+.chip-delta {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+
+.chip-delta.up {
+  color: var(--status-good);
+}
+
+.chip-delta.down {
+  display: inline-block;
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  margin-top: 2px;
+  font-size: 10.5px;
+}
+
+.chip-amber .chip-delta.down {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+
+/* Compact secondary ribbon — used for lower-priority / historical stats
+   so they read as reference data, not "live" numbers */
+.stat-ribbon--compact {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.stat-ribbon--compact .stat-chip {
+  padding: 12px 14px;
+  box-shadow: none;
+  border: 1px solid var(--border);
+  background: var(--bg-alt);
+}
+
+.stat-ribbon--compact .stat-chip:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-ribbon--compact .chip-icon {
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
+.stat-ribbon--compact .chip-val {
+  font-size: 18px;
+}
+
+/* ================================================================
+   CARDS
+   ================================================================ */
+.card,
+.dash-card,
+.table-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  animation: cardIn .4s ease both;
+}
+
+.dash-card {
+  padding: 20px 22px;
+}
+
+.card-hdr,
+.dash-card-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card-title,
+.dash-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title i,
+.dash-card-title i {
+  color: var(--brand-700);
+  font-size: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  background: var(--brand-50);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-sub,
+.dash-card-sub {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  margin-top: 4px;
+}
+
+.dash-view-all,
+.card-link {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--brand-700);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: gap .15s;
+  flex-shrink: 0;
+}
+
+.dash-view-all:hover,
+.card-link:hover {
+  gap: 8px;
+}
+
+/* ================================================================
+   BADGES / PILLS shared across tables
+   ================================================================ */
+.risk-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.risk-pill--critical {
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+}
+
+.risk-pill--warning {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+}
+
+.risk-pill--normal {
+  background: var(--status-good-bg);
+  color: var(--status-good);
+}
+
+.source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  font-size: 10.5px;
+  font-weight: 700;
+  /* Source (App vs Manual) is metadata, not a risk signal — kept
+     neutral gray so it never reads as a status color next to the
+     red/orange/green risk pill in the same row. App vs Manual is
+     told apart by icon + label, not by hue. */
+  background: var(--neutral-bg);
+  color: var(--neutral-text);
+}
+
+/* ================================================================
+   MODALS
+   ================================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 34, 24, .48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+.modal-card {
+  background: var(--card);
+  border-radius: 24px;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, .22);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  /* Chrome doesn't clip a custom-styled ::-webkit-scrollbar to a
+     border-radius on the same element — with overflow-y:auto directly
+     on this rounded card, the scrollbar thumb pokes straight past the
+     corner instead of following the curve. Move the scroll to
+     .modal-body (a plain rectangle) and keep this card a non-scrolling
+     clip boundary instead, which also pins the header/footer while
+     only the content between them scrolls. */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalIn .28s cubic-bezier(.22, 1, .36, 1);
+}
+
+.modal-card--sm {
+  max-width: 400px;
+}
+
+/* Generic confirm-dialog icon/text — used by any modal-card--sm that
+   asks "are you sure?" before a one-way action (deactivate account,
+   reject/approve a patient, logout). Pages that also define their own
+   local copy simply override these with identical values. */
+.confirm-icon {
+  font-size: 42px;
+  color: var(--status-critical);
+  margin-bottom: 14px;
+}
+
+.confirm-icon--success {
+  color: var(--brand-600, #1a9558);
+}
+
+.confirm-text {
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.modal-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid var(--border-soft);
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.modal-sub {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: none;
+  background: var(--brand-50);
+  color: var(--ink-soft);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+
+.modal-close:hover {
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+}
+
+.modal-body {
+  padding: 20px 24px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   FORM FIELDS (shared by any modal with a form — Start Mission,
+   Profile Settings, etc.)
+   ================================================================ */
+.mfield-group {
+  margin-bottom: 15px;
+}
+
+.mfield-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 7px;
+}
+
+.mfield-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 13px;
+  font-family: var(--font-ui);
+  font-size: 13.5px;
+  color: var(--ink);
+  outline: none;
+  background: var(--brand-50);
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+
+.mfield-input:focus {
+  border-color: var(--brand-500);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(34, 168, 102, .14);
+}
+
+/* ================================================================
+   PROFILE SETTINGS MODAL
+   ================================================================ */
+.profile-modal-body {
+  padding: 0;
+}
+
+.profile-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 26px 24px 22px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--brand-50);
+}
+
+.avatar-upload-wrap {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  margin-bottom: 8px;
+}
+
+.avatar-upload-img {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 800;
+  overflow: hidden;
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.avatar-upload-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-upload-btn {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 29px;
+  height: 29px;
+  border-radius: 50%;
+  background: var(--brand-700);
+  color: #fff;
+  border: 3px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.avatar-upload-btn:hover {
+  background: var(--brand-800);
+}
+
+.avatar-upload-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-top: 2px;
+}
+
+.avatar-upload-role {
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.profile-section {
+  padding: 18px 24px;
+}
+
+.profile-section+.profile-section {
+  border-top: 1px solid var(--border-soft);
+}
+
+.profile-section-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.profile-section-title i {
+  color: var(--brand-600);
+  font-size: 11px;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 0;
+}
+
+.profile-row+.profile-row {
+  border-top: 1px solid var(--border-soft);
+}
+
+.profile-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-row-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.profile-row-sub {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+}
+
+/* Clickable variant of .profile-row — used for links like
+   "Personnel Management" that navigate instead of toggling */
+.profile-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 10px;
+  margin: 0 -10px;
+  border-radius: 12px;
+  transition: background .15s;
+}
+
+.profile-link-row:hover {
+  background: var(--brand-50);
+}
+
+.profile-link-row i {
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  position: relative;
+  width: 40px;
+  height: 23px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.toggle-switch input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: var(--radius-pill);
+  transition: background .2s;
+  pointer-events: none;
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3);
+  transition: transform .2s;
+}
+
+.toggle-switch input:checked~.toggle-track {
+  background: var(--brand-500);
+}
+
+.toggle-switch input:checked~.toggle-track .toggle-thumb {
+  transform: translateX(17px);
+}
+
+/* ================================================================
+   TOAST
+   ================================================================ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 13px 20px;
+  border-radius: 16px;
+  background: var(--brand-800);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: var(--shadow-lg);
+  z-index: 400;
+  animation: toastIn .3s ease;
+}
+
+/* ================================================================
+   ANIMATIONS
+   ================================================================ */
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(.95) translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: .35;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 900px) {
+  .stat-ribbon {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .content {
+    padding: 18px 14px 32px;
+  }
+
+  .stat-ribbon {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .page-hdr {
+    flex-direction: column;
+  }
+}
+
+/* ================================================================
+   UTILITY & COMPONENT HELPER CLASSES
+   ================================================================ */
+.mb-0 { margin-bottom: 0 !important; }
+.mt-14 { margin-top: 14px !important; }
+.mb-32 { margin-bottom: 32px !important; }
+.text-center { text-align: center !important; }
+.w-full { width: 100% !important; }
+.justify-center { justify-content: center !important; }
+.modal-footer--between { justify-content: space-between !important; }
+.modal-actions-wrap { display: flex; gap: 10px; }
+.resize-y { resize: vertical; }
+.chip-val--sm { font-size: 20px !important; }
+.chart-wrap--180 { height: 180px !important; }
+.chart-wrap--220 { height: 220px !important; }
+.chart-wrap--240 { height: 240px !important; }
+.modal-card--max-400 { max-width: 400px !important; }
+
+/* Legend & reference dot colors */
+.leg-dot--good, .leg-dot--normal { background: var(--brand-500, #22a866) !important; }
+.leg-dot--warning, .leg-dot--elevated { background: var(--status-warning, #c2760a) !important; }
+.leg-dot--critical { background: var(--status-critical, #d0362f) !important; }
+.leg-dot--avg { background: var(--brand-500, #22a866) !important; }
+
+.enc-ref-dot--good { background: var(--status-good, #22a866) !important; }
+.enc-ref-dot--warning { background: var(--status-warning, #c2760a) !important; }
+.enc-ref-dot--critical { background: var(--status-critical, #d0362f) !important; }

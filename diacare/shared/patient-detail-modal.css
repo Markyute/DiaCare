@@ -1,0 +1,347 @@
+/* ================================================================
+   SHARED PATIENT DETAIL MODAL — styling for the tabbed profile
+   (Patient Profile / Health Records / Health History-Trends / RHU
+   Visit Records) opened by DiaCarePatientModal.open() from Patient
+   Monitoring, High-Risk Alerts, and Risk Analysis. Copied from
+   patient-monitoring.css, which originated this modal — kept in
+   sync manually since patient-monitoring.css still carries its own
+   copy for that page.
+   ================================================================ */
+
+.modal-card--wide {
+  max-width: 760px;
+  /* Chrome doesn't clip a custom-styled ::-webkit-scrollbar to a
+     border-radius on the same element — with .modal-card's own
+     overflow-y:auto, the scrollbar thumb pokes straight past the
+     rounded corner instead of following the curve. Move the scroll
+     to .modal-body (a plain rectangle) and keep this outer box as a
+     non-scrolling clip boundary, which also pins the header/tabs
+     while only the content underneath scrolls. */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-card--wide .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* ── Profile modal tab nav ── */
+/* Override theme.css's shared .modal-hdr border — only for this wide
+   tabbed modal, not every other modal in the app — so there's no
+   divider line between the patient name and the tab row above it. */
+.modal-card--wide .modal-hdr {
+  border-bottom: none;
+}
+
+.ptab-nav {
+  display: flex;
+  align-items: center;
+  /* The 4 pills are narrower than this row — left-aligned (the flex
+     default) dumped all the leftover space after the last pill,
+     making the row look lopsided (big gap on the right, none on the
+     left). Centering splits that leftover space evenly on both
+     sides instead. */
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 24px;
+  overflow-x: auto;
+  /* Setting only overflow-x forces overflow-y to a matching non-visible
+     value too (per spec), so a 1-2px content/line-height mismatch was
+     enough to trigger a tiny stray vertical scrollbar on this short
+     row. Pin overflow-y off explicitly — this nav only ever needs to
+     scroll horizontally. */
+  overflow-y: hidden;
+}
+
+.ptab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  /* Every tab is a same-sized pill at all times — active/inactive is
+     purely a color swap (background/text), never a change in box
+     size — so nothing shifts or looks inconsistent switching tabs. */
+  background: var(--bg-alt);
+  border: none;
+  border-radius: 8px;
+  color: var(--ink-faint, #6b7280);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  flex: 0 0 auto;
+  width: max-content;
+}
+
+.ptab-btn:hover {
+  color: var(--ink, #1a1a1a);
+  background: var(--border-soft);
+}
+
+.ptab-btn.active {
+  /* A filled background is a bigger, unmissable target than a thin
+     border-bottom line — that line kept reading as "not there" for
+     one viewer even once its computed color was verified correct
+     (screen scaling, transition timing, and other subtle rendering
+     factors all made a 3px line an easy thing to miss). */
+  background: var(--brand-600, #1a9558) !important;
+  color: #fff !important;
+}
+
+.ptab-btn.active:hover {
+  background: var(--brand-600, #1a9558) !important;
+}
+
+/* ── Health record cards — shared by the Health Records and RHU
+   Visit Records tabs ── */
+.hr-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.hr-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.hr-card-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.hr-card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink, #1a1a1a);
+}
+
+.hr-card-meta {
+  font-size: 12px;
+  color: var(--ink-faint, #6b7280);
+  margin-bottom: 12px;
+}
+
+.hr-measure-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.hr-measure-table td {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.hr-measure-table td:first-child {
+  color: var(--ink-faint, #6b7280);
+  width: 55%;
+}
+
+.hr-measure-table td:last-child {
+  font-weight: 600;
+  color: var(--ink, #1a1a1a);
+  text-align: right;
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.hr-measure-table tr:last-child td {
+  border-bottom: none;
+}
+
+.hr-risk-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink, #1a1a1a);
+  margin-bottom: 10px;
+}
+
+.hr-notes {
+  font-size: 12.5px;
+  color: var(--ink-faint, #6b7280);
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-soft);
+}
+
+.hr-notes strong {
+  color: var(--ink, #1a1a1a);
+}
+
+.hr-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--ink-faint, #9ca3af);
+  font-size: 13.5px;
+}
+
+.mb-14 {
+  margin-bottom: 14px;
+}
+
+.modal-patient-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.modal-av {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.modal-name {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.modal-meta {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin-top: 3px;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Detail sections */
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-section-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.detail-section-title i {
+  color: var(--brand-600);
+  font-size: 12px;
+}
+
+.review-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.review-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.review-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-faint, #6b7280);
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+.review-field-value {
+  font-size: 14px;
+  color: var(--ink, #1a1a1a);
+}
+
+.review-field-value--empty {
+  color: var(--ink-faint, #9ca3af);
+  font-style: italic;
+}
+
+.trend-explain-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.trend-explain--worsening {
+  background: var(--status-critical-bg);
+  color: var(--status-critical);
+}
+
+.trend-explain--improving {
+  background: var(--status-good-bg);
+  color: var(--status-good);
+}
+
+.trend-explain--stable {
+  background: var(--bg-alt);
+  color: var(--ink-soft);
+}
+
+.mini-chart-wrap {
+  height: 160px;
+  position: relative;
+}
+
+.mini-chart-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.modal-flag-wrap {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1px solid #f6d999;
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all .15s;
+}
+
+.btn-flag:hover {
+  background: #fdecc4;
+  border-color: var(--status-warning);
+}
+
+.btn-flag.flagged {
+  background: var(--status-critical-bg);
+  border-color: #f2b8b5;
+  color: var(--status-critical);
+}

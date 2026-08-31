@@ -1,0 +1,18 @@
+node_modules/
+*.log
+
+# Secrets. .env.example is the only one that belongs in the repo — it
+# names the variables without carrying any of their values.
+.env
+.env.*
+!.env.example
+
+# Firebase service-account keys. These can mint a token for any user in
+# the project, so they must never be committed. This is a backstop, not
+# a licence to keep one in the folder — delete it after setup.
+serviceAccountKey*.json
+*-firebase-adminsdk-*.json
+
+# Tool state, machine-specific
+.vercel/
+.firebase/

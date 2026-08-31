@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiaCare RHU Libon — Personnel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="../shared/theme.css" />
+  <link rel="stylesheet" href="user-management.css" />
+  <script type="module" src="../shared/auth-guard.js"></script>
+</head>
+
+<body>
+  <a href="#main" class="skip-link">Skip to main content</a>
+  <div class="app-shell">
+
+    <header class="topnav" id="topnav">
+      <div class="topnav-inner">
+        <a href="../dashboard/dashboard.html" class="topnav-brand">
+          <img src="../images/diacare-logo-new.png" alt="DiaCare" class="topnav-logo" />
+          <span class="topnav-brand-text">
+            <span class="topnav-name"><span class="tn-name-dark">Dia</span><span
+                class="tn-name-brand">Care</span></span>
+            <span class="topnav-sub">RHU Libon</span>
+          </span>
+        </a>
+        <nav class="topnav-links">
+          <a href="../dashboard/dashboard.html" class="tn-item"><i
+              class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+          <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i
+              class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+          <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i
+              class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+          <a href="../trends/glucose-trends.html" class="tn-item"><i
+              class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+          <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
+          <a href="../reports/reports.html" class="tn-item"><i
+              class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+          <a href="user-management.html" class="tn-item active" aria-current="page"><i
+              class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+        </nav>
+        <div class="topnav-right">
+          <div class="tn-clock-wrap">
+            <div class="topbar-clock" id="topbarClock">--:--:--</div>
+            <div class="topbar-date" id="topbarDate">---</div>
+          </div>
+          <a href="../settings/settings.html" class="tn-icon-btn" title="Settings">
+            <i class="fa-solid fa-gear"></i>
+          </a>
+          <div class="tn-notif-wrap">
+            <button class="tn-icon-btn" id="notifTrigger" title="Notifications">
+              <i class="fa-solid fa-bell"></i>
+              <span class="tn-icon-badge" id="navBellBadge">0</span>
+            </button>
+            <div class="tn-notif-panel hidden" id="notifPanel">
+              <div class="tn-notif-hdr">
+                <span>Notifications</span>
+                <span class="tn-notif-count" id="notifCount">0 new</span>
+              </div>
+              <div class="tn-notif-list" id="notifList"></div>
+              <a href="../alerts/high-risk.html" class="tn-notif-footer">
+                View all alerts <i class="fa-solid fa-arrow-right"></i>
+              </a>
+            </div>
+          </div>
+          <button class="tn-user" id="navAvatarBtn" title="RHU Nurse — Field Personnel">
+            <div class="topbar-avatar" id="navAvatar">RN</div>
+            <div class="tn-user-info">
+              <span class="tn-user-name" id="navUserName">RHU Nurse</span>
+              <span class="tn-user-role" id="navUserRole">Field Personnel</span>
+            </div>
+          </button>
+        </div>
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle navigation menu" title="Toggle navigation menu"><i class="fa-solid fa-bars"></i></button>
+      </div>
+      <div class="topnav-mobile-panel" id="mobileNavPanel">
+        <a href="../dashboard/dashboard.html" class="tn-item"><i
+            class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+        <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i
+            class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
+        <a href="../patient-encoding/patient-encoding.html" class="tn-item"><i
+            class="fa-solid fa-user-plus"></i><span>Encoding</span></a>
+        <a href="../trends/glucose-trends.html" class="tn-item"><i
+            class="fa-solid fa-chart-line"></i><span>Trends</span></a>
+        <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
+        <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+        <a href="user-management.html" class="tn-item active" aria-current="page"><i
+            class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
+        <a href="../login/login.html" class="tn-item"><i
+            class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
+      </div>
+    </header>
+
+    <main class="content" id="main">
+
+      <!-- PAGE HEADER -->
+      <div class="page-hdr">
+        <div>
+          <h1 class="page-title">Personnel</h1>
+          <p class="page-sub">Manage RHU Nurse and BHW accounts</p>
+        </div>
+        <button class="btn-add-personnel" id="btnAddPersonnel">
+          <i class="fa-solid fa-user-plus"></i> Add Personnel
+        </button>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="stat-ribbon">
+        <article class="stat-chip chip-green">
+          <div class="chip-icon"><i class="fa-solid fa-users"></i></div>
+          <div>
+            <div class="chip-lbl">Total Personnel</div>
+            <div class="chip-val" id="statTotal">0</div>
+            <div class="chip-delta up">All accounts</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-teal">
+          <div class="chip-icon"><i class="fa-solid fa-user-nurse"></i></div>
+          <div>
+            <div class="chip-lbl">RHU Nurses</div>
+            <div class="chip-val" id="statNurses">0</div>
+            <div class="chip-delta up">Active nurses</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-blue">
+          <div class="chip-icon"><i class="fa-solid fa-house-medical"></i></div>
+          <div>
+            <div class="chip-lbl">BHWs</div>
+            <div class="chip-val" id="statBHW">0</div>
+            <div class="chip-delta up">Barangay health workers</div>
+          </div>
+        </article>
+        <article class="stat-chip chip-red">
+          <div class="chip-icon"><i class="fa-solid fa-user-slash"></i></div>
+          <div>
+            <div class="chip-lbl">Inactive</div>
+            <div class="chip-val" id="statInactive">0</div>
+            <div class="chip-delta down">Deactivated accounts</div>
+          </div>
+        </article>
+      </div>
+
+      <!-- FILTER BAR -->
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" class="search-input" id="searchInput" autocomplete="off"
+            placeholder="Search by name, username, or barangay..." />
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Role</span>
+          <div class="filter-pills">
+            <button class="pill active" data-role="all">All</button>
+            <button class="pill pill-teal" data-role="RHU Nurse">RHU Nurse</button>
+            <button class="pill pill-blue" data-role="BHW">BHW</button>
+          </div>
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">Status</span>
+          <div class="filter-pills">
+            <button class="pill pill-status active" data-status="all">All</button>
+            <button class="pill pill-status pill-green" data-status="active">Active</button>
+            <button class="pill pill-status pill-red" data-status="inactive">Inactive</button>
+          </div>
+        </div>
+        <div class="filter-count" id="filterCount">Showing 0 personnel</div>
+      </div>
+
+      <!-- PERSONNEL TABLE -->
+      <div class="table-card">
+        <table class="personnel-table">
+          <thead>
+            <tr>
+              <th>Personnel</th>
+              <th>Role</th>
+              <th>Username</th>
+              <th>Contact</th>
+              <th>Barangay Assignment</th>
+              <th>Status</th>
+              <th>Date Added</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="personnelTbody"></tbody>
+        </table>
+        <div class="table-empty hidden" id="tableEmpty">
+          <i class="fa-solid fa-users-slash"></i>
+          <p>No personnel found matching your filters.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ADD / EDIT MODAL -->
+  <div class="modal-overlay hidden" id="personnelModal">
+    <div class="modal-card">
+      <div class="modal-hdr">
+        <div>
+          <div class="modal-title" id="modalTitle">Add New Personnel</div>
+          <div class="modal-sub" id="modalSub">Fill in the details to create a new account</div>
+        </div>
+        <button class="modal-close" id="modalClose" aria-label="Close modal" title="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+
+        <div class="modal-field-grid">
+          <div class="mfield-group mfield-span2">
+            <label class="mfield-label" for="fName">Full Name <span class="required">*</span></label>
+            <input class="mfield-input" type="text" id="fName" placeholder="e.g. Maria Santos" title="Full Name" />
+            <div class="mfield-error hidden" id="errName">Full name is required.</div>
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="fRole">Role <span class="required">*</span></label>
+            <select class="mfield-input" id="fRole" title="Role">
+              <option value="">Select role...</option>
+              <option>RHU Nurse</option>
+              <option>BHW</option>
+            </select>
+            <div class="mfield-error hidden" id="errRole">Role is required.</div>
+          </div>
+          <div class="mfield-group" id="fStatusGroup">
+            <label class="mfield-label" for="fStatus">Status</label>
+            <select class="mfield-input" id="fStatus" title="Status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="mfield-group" id="fEmailGroup">
+            <label class="mfield-label" for="fEmail">Email Address <span class="required" id="fEmailRequiredMark"></span></label>
+            <input class="mfield-input" type="email" id="fEmail" placeholder="e.g. nurse@rhulibon.gov.ph" title="Email Address" />
+            <div class="mfield-hint" id="fEmailHint">Signs into the web dashboard — also used for password resets.</div>
+            <div class="mfield-error hidden" id="errEmail">A valid email is required for this role.</div>
+          </div>
+          <div class="mfield-group" id="fUsernameGroup">
+            <label class="mfield-label" for="fUsername">Username <span class="required" id="fUsernameRequiredMark">*</span></label>
+            <input class="mfield-input" type="text" id="fUsername" placeholder="e.g. msantos" title="Username" />
+            <div class="mfield-hint" id="fUsernameHint">Signs into the mobile app — BHWs don't use email.</div>
+            <div class="mfield-error hidden" id="errUsername">Username is required.</div>
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" id="fPasswordLabel" for="fPassword">Password <span class="required">*</span></label>
+            <div class="pwd-wrap">
+              <input class="mfield-input" type="password" id="fPassword" placeholder="Min. 6 characters" title="Password" />
+              <button type="button" class="pwd-toggle" id="pwdToggle" aria-label="Toggle password visibility" title="Toggle password visibility"><i class="fa-regular fa-eye"
+                  id="pwdEye"></i></button>
+            </div>
+            <div class="mfield-error hidden" id="errPassword">Password must be at least 6 characters.</div>
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="fContact">Contact Number</label>
+            <input class="mfield-input" type="text" id="fContact" placeholder="e.g. 09XX XXX XXXX" title="Contact Number" />
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="fBarangay">Barangay Assignment</label>
+            <input class="mfield-input" type="text" id="fBarangay" placeholder="e.g. San Jose, or All Barangays"
+              title="Barangay Assignment" />
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="fPurok">Purok</label>
+            <input class="mfield-input" type="text" id="fPurok" placeholder="e.g. Purok 3" title="Purok" />
+          </div>
+          <div class="mfield-group mfield-span2">
+            <label class="mfield-checkbox-row" for="fMustChangePassword">
+              <input type="checkbox" id="fMustChangePassword" checked />
+              <span>Require password change on first login</span>
+            </label>
+            <div class="mfield-hint">Recommended for new accounts — the person sets their own permanent
+              password the first time they sign in with the temporary one above.</div>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="modalCancel">Cancel</button>
+        <button class="btn btn-primary" id="modalSave">
+          <i class="fa-solid fa-check"></i> <span id="modalSaveLbl">Save Personnel</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEACTIVATE CONFIRM MODAL -->
+  <div class="modal-overlay hidden" id="deactivateModal">
+    <div class="modal-card modal-card--sm">
+      <div class="modal-hdr">
+        <div class="modal-title" id="deactivateTitle">Deactivate Account?</div>
+        <button class="modal-close" id="deactivateClose" aria-label="Close modal" title="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="confirm-icon" id="confirmIcon"><i class="fa-solid fa-user-slash"></i></div>
+        <p class="confirm-text" id="confirmText">Are you sure you want to deactivate this account? They will no longer
+          be able to log in.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="deactivateCancel">Cancel</button>
+        <button class="btn btn-danger" id="deactivateConfirm">
+          <i class="fa-solid fa-user-slash"></i> <span id="deactivateLbl">Deactivate</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="toast hidden" id="toast"></div>
+  <script src="../shared/stats.js"></script>
+  <script src="../shared/patients-data.js"></script>
+  <script src="../shared/notifications.js"></script>
+  <script src="../shared/profile.js"></script>
+  <script type="module" src="../shared/logout-confirm.js"></script>
+  <script src="user-management.js"></script>
+</body>
+
+</html>
