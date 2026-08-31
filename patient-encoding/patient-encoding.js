@@ -165,7 +165,9 @@ document.getElementById('height')?.addEventListener('input', updateBmiDisplay);
 let encodingMode = 'new';
 let selectedExistingPatient = null;
 
-const identityFieldIds = ['patientName', 'patientAge', 'patientSex'];
+const identityFieldIds = ['firstName', 'middleName', 'lastName', 'patientDob',
+  'patientSex', 'patientPurok', 'patientContact', 'patientAddress',
+  'emergencyName', 'emergencyNumber'];
 
 function setIdentityFieldsLocked(locked) {
   identityFieldIds.forEach(id => {
@@ -181,11 +183,61 @@ function setIdentityFieldsLocked(locked) {
   }
 }
 
+/* Age is displayed, never typed — a typed age is wrong a year later,
+   and the record stores a birth date regardless. */
+function ageFromDob(value) {
+  if (!value) return null;
+  const dob = new Date(value);
+  if (Number.isNaN(dob.getTime())) return null;
+  const now = new Date();
+  let years = now.getFullYear() - dob.getFullYear();
+  const months = now.getMonth() - dob.getMonth();
+  if (months < 0 || (months === 0 && now.getDate() < dob.getDate())) years--;
+  return years;
+}
+
+function refreshAgeDisplay() {
+  const dob = document.getElementById('patientDob')?.value;
+  const age = ageFromDob(dob);
+  const ageEl = document.getElementById('patientAge');
+  if (ageEl) ageEl.value = (age === null || age < 0) ? '' : String(age);
+}
+
+document.getElementById('patientDob')?.addEventListener('change', refreshAgeDisplay);
+document.getElementById('patientDob')?.addEventListener('input', refreshAgeDisplay);
+
+/* A date of birth cannot be in the future; the browser enforces it as
+   well as the validator so the picker itself refuses. */
+(function capDobToToday() {
+  const el = document.getElementById('patientDob');
+  if (el) el.max = new Date().toISOString().slice(0, 10);
+})();
+
+function toDateInputValue(value) {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  /* Built from local parts rather than toISOString, which shifts to UTC
+     and can land on the previous day in a +08:00 timezone. */
+  const pad = (n) => String(n).padStart(2, '0');
+  return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+}
+
 function populateFromExistingPatient(patient) {
-  document.getElementById('patientName').value = patient.name;
+  document.getElementById('firstName').value = patient.firstName ?? '';
+  document.getElementById('middleName').value = patient.middleName ?? '';
+  document.getElementById('lastName').value = patient.lastName ?? '';
   document.getElementById('patientId').value = patient.id;
-  document.getElementById('patientAge').value = patient.age ?? '';
+  document.getElementById('patientDob').value = toDateInputValue(patient.birthDate);
+  refreshAgeDisplay();
   document.getElementById('patientSex').value = patient.sex ?? '';
+  document.getElementById('patientPurok').value = patient.purok ?? '';
+  document.getElementById('patientContact').value = patient.contactNumber ?? '';
+  document.getElementById('patientAddress').value = patient.address ?? '';
+  document.getElementById('emergencyName').value = patient.emergencyContactName ?? '';
+  document.getElementById('emergencyNumber').value = patient.emergencyContactNumber ?? '';
+  document.getElementById('diagnosisDate').value = toDateInputValue(patient.diagnosisDateRaw);
+  document.getElementById('attendingPhysician').value = patient.attendingPhysician ?? '';
   const hiddenBarangay = document.getElementById('patientBarangay');
   const selSpan = document.getElementById('barangaySelected');
   if (hiddenBarangay) hiddenBarangay.value = patient.barangay ?? '';
@@ -209,9 +261,13 @@ document.querySelectorAll('input[name="encodingMode"]').forEach(radio => {
     if (encodingMode === 'new') {
       clearExistingPatientSelection();
       setIdentityFieldsLocked(false);
-      document.getElementById('patientName').value = '';
+      ['firstName', 'middleName', 'lastName', 'patientDob', 'patientPurok',
+        'patientContact', 'patientAddress', 'emergencyName', 'emergencyNumber',
+        'diagnosisDate', 'attendingPhysician', 'patientAge'].forEach((fid) => {
+        const el = document.getElementById(fid);
+        if (el) el.value = '';
+      });
       document.getElementById('patientId').value = generateId();
-      document.getElementById('patientAge').value = '';
       document.getElementById('patientSex').value = '';
       const hiddenBarangay = document.getElementById('patientBarangay');
       if (hiddenBarangay) hiddenBarangay.value = '';
@@ -374,14 +430,24 @@ function validate() {
 
   const fields = [
     {
-      id: 'patientName', errId: 'errName',
-      msg: 'Full name is required.',
+      id: 'firstName', errId: 'errFirstName',
+      msg: 'First name is required.',
       fn: v => v.trim().length >= 2
     },
     {
-      id: 'patientAge', errId: 'errAge',
-      msg: 'Valid age (0–120) required.',
-      fn: v => v && !isNaN(v) && v >= 0 && v <= 120
+      id: 'lastName', errId: 'errLastName',
+      msg: 'Last name is required.',
+      fn: v => v.trim().length >= 2
+    },
+    {
+      /* Bounded rather than merely present: a mistyped year is the
+         common error here, and 120+ or a future date is always one. */
+      id: 'patientDob', errId: 'errDob',
+      msg: 'A valid date of birth is required.',
+      fn: v => {
+        const age = ageFromDob(v);
+        return age !== null && age >= 0 && age <= 120;
+      }
     },
     {
       id: 'patientSex', errId: 'errSex',
@@ -469,9 +535,20 @@ function savePatient(action) {
     return;
   }
 
-  const name = document.getElementById('patientName').value.trim();
+  const firstName = document.getElementById('firstName').value.trim();
+  const middleName = document.getElementById('middleName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+  const name = [firstName, middleName, lastName].filter(Boolean).join(' ');
   const id = document.getElementById('patientId').value;
-  const age = document.getElementById('patientAge').value;
+  const dob = document.getElementById('patientDob').value;
+  const age = ageFromDob(dob);
+  const purok = document.getElementById('patientPurok').value.trim();
+  const contactNumber = document.getElementById('patientContact').value.trim();
+  const address = document.getElementById('patientAddress').value.trim();
+  const emergencyContactName = document.getElementById('emergencyName').value.trim();
+  const emergencyContactNumber = document.getElementById('emergencyNumber').value.trim();
+  const diagnosisDate = document.getElementById('diagnosisDate').value;
+  const attendingPhysician = document.getElementById('attendingPhysician').value.trim();
   const sex = document.getElementById('patientSex').value;
   const barangay = document.getElementById('patientBarangay').value;
   const glucose = parseFloat(document.getElementById('glucose').value);
@@ -518,6 +595,11 @@ function savePatient(action) {
 
   const patient = {
     id, name, age, sex, barangay, glucose,
+    firstName, middleName, lastName,
+    birthDate: dob,
+    purok, contactNumber, address,
+    emergencyContactName, emergencyContactNumber,
+    diagnosisDate, attendingPhysician,
     bp: `${sys}/${dia}`, weight, height, bmi,
     dmType, medicationName, dosage, insulinUse, medicationAdherence,
     referral, notes,
@@ -732,7 +814,7 @@ function resetForm() {
     <p>Enter glucose and blood pressure to see the risk assessment</p>
   </div>`;
 
-  document.getElementById('patientName')?.focus();
+  document.getElementById('firstName')?.focus();
 }
 
 function openResetModal() {
@@ -754,7 +836,7 @@ document.getElementById('resetModalConfirm')?.addEventListener('click', () => {
 });
 
 /* ── Clear errors on input ── */
-['patientName', 'patientAge', 'patientSex', 'patientBarangay',
+['firstName', 'lastName', 'patientDob', 'patientSex', 'patientBarangay',
   'glucose', 'bpSystolic', 'bpDiastolic'].forEach(id => {
     document.getElementById(id)?.addEventListener('input', () => {
       document.getElementById(id)?.classList.remove('error');

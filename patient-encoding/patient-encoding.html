@@ -185,29 +185,50 @@
                 <div class="enc-error hidden" id="errExistingPatient">Select a patient from the list.</div>
               </div>
 
+              <!-- Name is captured in parts rather than as one "Full Name"
+                   string. The patient profile displays First / Middle /
+                   Last separately and the mobile app stores them that way,
+                   so a single field meant guessing where to split it --
+                   which got middle names and compound surnames wrong. -->
               <div class="enc-grid enc-grid--3">
-                <div class="enc-field enc-field--span2">
-                  <label class="enc-label" for="patientName">
-                    Full Name <span class="required">*</span>
+                <div class="enc-field">
+                  <label class="enc-label" for="firstName">
+                    First Name <span class="required">*</span>
                   </label>
-                  <input class="enc-input" type="text" id="patientName" placeholder="e.g. Maria Santos" maxlength="100"
+                  <input class="enc-input" type="text" id="firstName" placeholder="e.g. Maria" maxlength="60"
                     required />
-                  <div class="enc-error hidden" id="errName">Name is required.</div>
+                  <div class="enc-error hidden" id="errFirstName">First name is required.</div>
                 </div>
                 <div class="enc-field">
-                  <label class="enc-label" for="patientId">Patient ID</label>
-                  <input class="enc-input" type="text" id="patientId" placeholder="Auto-generated" readonly />
+                  <label class="enc-label" for="middleName">Middle Name</label>
+                  <input class="enc-input" type="text" id="middleName" placeholder="e.g. Reyes" maxlength="60" />
+                </div>
+                <div class="enc-field">
+                  <label class="enc-label" for="lastName">
+                    Last Name <span class="required">*</span>
+                  </label>
+                  <input class="enc-input" type="text" id="lastName" placeholder="e.g. Santos" maxlength="60"
+                    required />
+                  <div class="enc-error hidden" id="errLastName">Last name is required.</div>
                 </div>
               </div>
 
-              <div class="enc-grid enc-grid--3">
+              <div class="enc-grid enc-grid--3 mt-14">
+                <!-- Date of birth, not age. Age was all this form asked
+                     for, so a birth date had to be invented to store the
+                     record at all, and a stored age silently goes stale a
+                     year later. Age is now shown, computed, never typed. -->
                 <div class="enc-field">
-                  <label class="enc-label" for="patientAge">
-                    Age <span class="required">*</span>
+                  <label class="enc-label" for="patientDob">
+                    Date of Birth <span class="required">*</span>
                   </label>
-                  <input class="enc-input" type="number" id="patientAge" placeholder="e.g. 45" min="0" max="120"
-                    required />
-                  <div class="enc-error hidden" id="errAge">Valid age required.</div>
+                  <input class="enc-input" type="date" id="patientDob" required />
+                  <div class="enc-error hidden" id="errDob">A valid date of birth is required.</div>
+                </div>
+                <div class="enc-field">
+                  <label class="enc-label" for="patientAge">Age</label>
+                  <input class="enc-input" type="text" id="patientAge" placeholder="&mdash;" readonly />
+                  <div class="enc-hint">Calculated from the date of birth</div>
                 </div>
                 <div class="enc-field">
                   <label class="enc-label" for="patientSex">
@@ -220,6 +241,9 @@
                   </select>
                   <div class="enc-error hidden" id="errSex">Sex is required.</div>
                 </div>
+              </div>
+
+              <div class="enc-grid enc-grid--3 mt-14">
 
                 <div class="enc-field">
                   <label class="enc-label" for="barangaySearch">
@@ -242,6 +266,42 @@
                   <input type="hidden" id="patientBarangay" name="patientBarangay" required />
 
                   <div class="enc-error hidden" id="errBarangay">Barangay is required.</div>
+                </div>
+                <div class="enc-field">
+                  <label class="enc-label" for="patientPurok">Purok</label>
+                  <input class="enc-input" type="text" id="patientPurok" placeholder="e.g. Purok 3" maxlength="60" />
+                </div>
+                <div class="enc-field">
+                  <label class="enc-label" for="patientContact">Contact Number</label>
+                  <input class="enc-input" type="tel" id="patientContact" placeholder="e.g. 0917 111 2222"
+                    maxlength="20" />
+                </div>
+              </div>
+
+              <div class="enc-grid enc-grid--3 mt-14">
+                <div class="enc-field enc-field--span2">
+                  <label class="enc-label" for="patientAddress">Home Address</label>
+                  <input class="enc-input" type="text" id="patientAddress" placeholder="e.g. 45 Rizal St."
+                    maxlength="160" />
+                </div>
+                <div class="enc-field">
+                  <label class="enc-label" for="patientId">Patient ID</label>
+                  <input class="enc-input" type="text" id="patientId" placeholder="Auto-generated" readonly />
+                </div>
+              </div>
+
+              <!-- Emergency contact is its own section on the patient
+                   profile, and was never collected here at all. -->
+              <div class="enc-grid enc-grid--2 mt-14">
+                <div class="enc-field">
+                  <label class="enc-label" for="emergencyName">Emergency Contact Name</label>
+                  <input class="enc-input" type="text" id="emergencyName" placeholder="e.g. Jose Santos"
+                    maxlength="100" />
+                </div>
+                <div class="enc-field">
+                  <label class="enc-label" for="emergencyNumber">Emergency Contact Number</label>
+                  <input class="enc-input" type="tel" id="emergencyNumber" placeholder="e.g. 0917 111 3333"
+                    maxlength="20" />
                 </div>
               </div>
             </div>
@@ -339,14 +399,25 @@
                 </div>
               </div>
 
-              <div class="enc-field">
-                <label class="enc-label" for="diabetesType">Diabetes Type</label>
-                <select class="enc-input" id="diabetesType">
-                  <option>Type 1</option>
-                  <option selected>Type 2</option>
-                  <option>Gestational</option>
-                  <option>Unknown</option>
-                </select>
+              <div class="enc-grid enc-grid--3">
+                <div class="enc-field">
+                  <label class="enc-label" for="diabetesType">Diabetes Type</label>
+                  <select class="enc-input" id="diabetesType">
+                    <option>Type 1</option>
+                    <option selected>Type 2</option>
+                    <option>Gestational</option>
+                    <option>Unknown</option>
+                  </select>
+                </div>
+                <div class="enc-field">
+                  <label class="enc-label" for="diagnosisDate">Date of Diagnosis</label>
+                  <input class="enc-input" type="date" id="diagnosisDate" />
+                </div>
+                <div class="enc-field">
+                  <label class="enc-label" for="attendingPhysician">Attending Physician</label>
+                  <input class="enc-input" type="text" id="attendingPhysician" placeholder="e.g. Dr. Fernandez"
+                    maxlength="100" />
+                </div>
               </div>
               <!-- Chief Complaint and Assessment/Diagnosis were removed as
                    separate fields — the app has no equivalent to either;

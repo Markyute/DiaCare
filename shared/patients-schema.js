@@ -206,6 +206,10 @@ export function patientToView(id, p, records) {
     age: ageFrom(p.birthDate),
     dob: formatDate(p.birthDate),
     diagnosisDate: formatDate(p.diagnosisDate),
+    /* Formatted above for display; the raw Date is what a date input
+       needs to prefill, so both are exposed rather than reparsing
+       a localised string. */
+    diagnosisDateRaw: toDate(p.diagnosisDate),
     birthDate: toDate(p.birthDate),
 
     /* Latest vitals — the monitoring table's columns */
