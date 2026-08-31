@@ -23,8 +23,14 @@ service cloud.firestore {
     // Staff accounts. Everyone verified may read the roster (the personnel
     // page needs it); only admins may create, change, or disable accounts,
     // and only through the Cloud Functions, which use the Admin SDK.
+    // The roster is an administrator's view. A nurse can read their own
+    // profile - the top-nav chip needs their name and role - but not the
+    // rest of the staff list, which is the personnel page's data.
+    //
+    // Hiding the nav link and bouncing the page are conveniences; this is
+    // what stops a nurse from simply querying the collection.
     match /users/{uid} {
-      allow read: if signedInAndVerified();
+      allow read: if isAdmin() || (signedInAndVerified() && request.auth.uid == uid);
       allow write: if false;
     }
 

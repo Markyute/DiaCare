@@ -11,9 +11,19 @@
    an empty page.
    ================================================================ */
 
-import { auth, onAuthStateChanged, hasVerifiedSession, signOut } from './firebase.js';
+import { auth, onAuthStateChanged, hasVerifiedSession, signOut, getIdTokenResult } from './firebase.js';
 
 const LOGIN_URL = new URL('../login/login.html', import.meta.url).href;
+const HOME_URL = new URL('../dashboard/dashboard.html', import.meta.url).href;
+
+/* A page that only some roles may open declares it in its own head:
+     <meta name="diacare-require-role" content="admin">
+   Read from the token claim rather than the users/ document, so the
+   check costs nothing and cannot be defeated by a Firestore read the
+   rules would reject anyway. */
+const REQUIRED_ROLE = document
+  .querySelector('meta[name="diacare-require-role"]')
+  ?.getAttribute('content') || null;
 
 /* Blank the page while the token is being checked, so a protected page
    never flashes its layout before the redirect lands. */
@@ -45,6 +55,18 @@ export const currentUser = new Promise((resolve) => {
       bounce();
       return;
     }
+
+    if (REQUIRED_ROLE) {
+      const token = await getIdTokenResult(user);
+      if ((token.claims || {}).role !== REQUIRED_ROLE) {
+        /* Sent home rather than to the login screen: they are signed in
+           and entitled to the dashboard, just not to this page. Bouncing
+           to login would read as a broken session. */
+        window.location.replace(HOME_URL);
+        return;
+      }
+    }
+
     reveal();
     resolve(user);
   });

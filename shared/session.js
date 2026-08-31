@@ -39,7 +39,23 @@ function initialsOf(name) {
     .toUpperCase() || '?';
 }
 
+/* Links marked data-role-only are removed for anyone whose role does not
+   match. Removed rather than hidden: a hidden link is still tabbable and
+   still in the accessibility tree, so a keyboard user would land on a
+   Personnel link that bounces them straight back.
+
+   This is presentation only. The page itself checks the same claim via
+   auth-guard, and firestore.rules refuses the roster read regardless. */
+function applyRoleVisibility(role) {
+  document.querySelectorAll('[data-role-only]').forEach((el) => {
+    const allowed = el.getAttribute('data-role-only').split(/[\s,]+/).filter(Boolean);
+    if (!allowed.includes(role)) el.remove();
+  });
+}
+
 function paint({ name, role, email }) {
+  applyRoleVisibility(role);
+
   const label = ROLE_LABELS[role] || 'Staff';
 
   /* Settings uses navName; every other page uses navUserName. Cover
