@@ -27,10 +27,64 @@ import {
   browserSessionPersistence,
   signInWithEmailAndPassword,
   signOut,
+  onAuthStateChanged,
+  hasVerifiedSession,
   authErrorMessage,
 } from '../shared/firebase.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/* ================================================================
+   ALREADY SIGNED IN?
+
+   "Keep me signed in" chooses local persistence and a 30-day verified
+   session, but this page never asked whether either was still good — so
+   a returning user was shown the sign-in form and made to do the
+   password and the emailed code again, which is the thing the checkbox
+   exists to avoid.
+
+   Both halves have to hold. A Firebase session on its own is not
+   enough: the emailed code is what grants the claims the dashboard's
+   reads depend on, and without a live one this would send someone to a
+   dashboard that could load nothing.
+
+   The form is hidden until the answer is known, so a returning user
+   does not see a login screen flash before being sent on.
+   ================================================================ */
+const resumeVeil = document.createElement('style');
+resumeVeil.textContent = '.auth-shell{visibility:hidden !important}';
+resumeVeil.id = 'resumeVeil';
+document.head.appendChild(resumeVeil);
+
+function showLoginForm() {
+  document.getElementById('resumeVeil')?.remove();
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    showLoginForm();
+    return;
+  }
+  try {
+    if (await hasVerifiedSession(user)) {
+      window.location.replace('../dashboard/dashboard.html');
+      return;
+    }
+  } catch (err) {
+    /* Offline, or the token could not be refreshed. Signing in by hand
+       is the way forward from here, so show the form. */
+    console.debug('Could not resume the session:', err);
+  }
+  /* Signed in, but the code was never verified or the session has
+     expired. The password step starts again from here. */
+  showLoginForm();
+});
+
+/* If Firebase never answers at all, do not leave the operator staring
+   at a blank page. */
+setTimeout(showLoginForm, 6000);
+
+
 
 const form = document.getElementById('loginForm');
 const emailInput = document.getElementById('inputEmail');
