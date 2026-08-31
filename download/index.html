@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DiaCare — Install the BHW App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="download.css" />
+</head>
+
+<body>
+  <main class="page">
+    <div class="card">
+
+      <div class="brand">
+        <img src="../images/diacare-logo-new.png" alt="" class="brand-logo" />
+        <div>
+          <div class="brand-name"><span class="dia">Dia</span><span class="care">Care</span></div>
+          <div class="brand-sub">RHU Libon</div>
+        </div>
+      </div>
+
+      <h1>Install the BHW app</h1>
+      <p class="lede">Scan this with the phone you want to install it on.</p>
+
+      <!-- The QR is drawn from the page's own address rather than a
+           hard-coded one, so it keeps working if this moves to a custom
+           domain or a preview URL. -->
+      <div class="qr-frame">
+        <div id="qr" aria-label="QR code linking to the app download"></div>
+      </div>
+
+      <p class="qr-url" id="qrUrl">Preparing link&hellip;</p>
+
+      <a class="btn" id="btnDownload" href="diacare.apk" download>
+        <i class="fa-solid fa-download" aria-hidden="true"></i> Download the app
+      </a>
+      <p class="btn-note">Already on the phone? Use this button instead of the code.</p>
+
+      <div class="steps">
+        <div class="steps-title">On the phone</div>
+        <ol>
+          <li>Scan the code with the camera, then open the link.</li>
+          <li>Android will warn that the file came from outside the Play Store.
+            Choose <strong>Install anyway</strong>, or allow installs from your browser
+            when prompted.</li>
+          <li>Open DiaCare and sign in with the username and password your
+            Barangay Health Nurse gave you.</li>
+        </ol>
+      </div>
+
+      <div class="notice">
+        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+        <div>
+          <strong>Android only.</strong> This is an Android app; iPhones cannot
+          install it. It is also a test build, signed for testing rather than for
+          the Play Store &mdash; fine for the health unit's own phones.
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="download.js"></script>
+</body>
+
+</html>

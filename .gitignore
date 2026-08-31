@@ -16,3 +16,4 @@ serviceAccountKey*.json
 # Tool state, machine-specific
 .vercel/
 .firebase/
+*.apk
