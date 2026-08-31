@@ -150,8 +150,14 @@
       <div class="filter-bar">
         <div class="search-wrap">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" class="search-input" id="searchInput" autocomplete="off"
-            placeholder="Search by name, username, or barangay..." />
+          <!-- type=search gives the native clear affordance, and the
+               name/autocomplete pair keeps Chrome from treating this as a
+               login field: autocomplete="off" alone is routinely ignored,
+               and it was autofilling a saved email in here, which silently
+               filtered the roster down to whoever owned that address. -->
+          <input type="search" class="search-input" id="searchInput" name="personnel-filter"
+            autocomplete="off" data-form-type="other" spellcheck="false"
+            placeholder="Search by name, email, username, or barangay..." />
         </div>
         <div class="filter-group">
           <span class="filter-label">Role</span>
@@ -192,7 +198,13 @@
         </table>
         <div class="table-empty hidden" id="tableEmpty">
           <i class="fa-solid fa-users-slash"></i>
-          <p>No personnel found matching your filters.</p>
+          <!-- Names the filters actually in force. An empty roster and a
+               roster hidden behind a stale filter looked identical before,
+               which is how an autofilled search box went unnoticed. -->
+          <p id="tableEmptyMsg">No personnel found matching your filters.</p>
+          <button class="btn-clear-filters hidden" id="btnClearFilters" type="button">
+            <i class="fa-solid fa-filter-circle-xmark"></i> Clear filters
+          </button>
         </div>
       </div>
 

@@ -132,6 +132,13 @@ function renderStats() {
    FILTER
    ================================================================ */
 function getFiltered() {
+  /* Read the box rather than trusting the cached value. The two drifted
+     apart whenever the field changed without an input event - browser
+     autofill being the case that actually bit - leaving the table
+     filtered by text the code did not know was there. */
+  const searchEl = document.getElementById('searchInput');
+  if (searchEl) searchQuery = searchEl.value;
+
   return PERSONNEL.filter(p => {
     const matchRole = activeRole === 'all' || p.role === activeRole;
     const matchStatus = activeStatus === 'all' || p.status === activeStatus;
@@ -154,10 +161,33 @@ function renderTable() {
   if (!tbody) return;
 
   const filtered = getFiltered();
-  if (countEl) countEl.textContent = `Showing ${filtered.length} personnel`;
+  const filtering = !!searchQuery || activeRole !== 'all' || activeStatus !== 'all';
+
+  if (countEl) {
+    countEl.textContent = filtering
+      ? `Showing ${filtered.length} of ${PERSONNEL.length} personnel`
+      : `Showing ${filtered.length} personnel`;
+  }
 
   if (filtered.length === 0) {
     tbody.innerHTML = '';
+
+    /* Say which filter is hiding everything, and offer to drop it. */
+    const msgEl = document.getElementById('tableEmptyMsg');
+    const clearBtn = document.getElementById('btnClearFilters');
+    if (msgEl) {
+      if (PERSONNEL.length === 0) {
+        msgEl.textContent = 'No personnel yet. Use Add Personnel to create the first account.';
+      } else {
+        const bits = [];
+        if (searchQuery) bits.push(`matching "${searchQuery}"`);
+        if (activeRole !== 'all') bits.push(`with the ${roleLabel(activeRole)} role`);
+        if (activeStatus !== 'all') bits.push(`that are ${activeStatus}`);
+        msgEl.textContent = `No personnel ${bits.join(' ')}. ${PERSONNEL.length} are hidden by these filters.`;
+      }
+    }
+    clearBtn?.classList.toggle('hidden', !filtering);
+
     emptyEl?.classList.remove('hidden');
     return;
   }
@@ -235,10 +265,33 @@ document.querySelectorAll('[data-status]').forEach(btn => {
   });
 });
 
-document.getElementById('searchInput')?.addEventListener('input', (e) => {
-  searchQuery = e.target.value;
-  renderTable();
+/* 'search' fires on the native clear button too, which 'input' alone
+   misses in some browsers. */
+['input', 'search', 'change'].forEach((evt) => {
+  document.getElementById('searchInput')?.addEventListener(evt, (e) => {
+    searchQuery = e.target.value;
+    renderTable();
+  });
 });
+
+function clearFilters() {
+  const searchEl = document.getElementById('searchInput');
+  if (searchEl) searchEl.value = '';
+  searchQuery = '';
+
+  activeRole = 'all';
+  activeStatus = 'all';
+  document.querySelectorAll('[data-role]').forEach((b) => {
+    b.classList.toggle('active', b.dataset.role === 'all');
+  });
+  document.querySelectorAll('[data-status]').forEach((b) => {
+    b.classList.toggle('active', b.dataset.status === 'all');
+  });
+
+  renderTable();
+}
+
+document.getElementById('btnClearFilters')?.addEventListener('click', clearFilters);
 
 /* ================================================================
    ADD MODAL

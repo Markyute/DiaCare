@@ -741,3 +741,33 @@
   color: var(--ink-faint, #6b7280);
   line-height: 1.4;
 }
+
+/* ── Clear filters ──
+   Appears in the empty state only while something is actually filtered,
+   so the way out of an over-filtered table is in the table rather than
+   somewhere the reader has to go looking for it. */
+.btn-clear-filters {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  padding: 8px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 11px;
+  background: var(--card);
+  color: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .18s ease;
+}
+
+.btn-clear-filters:hover {
+  border-color: var(--brand-300, var(--border));
+  color: var(--brand-700, var(--ink));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-clear-filters { transition: none; }
+}
