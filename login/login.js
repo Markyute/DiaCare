@@ -19,14 +19,13 @@
    browser restart the same way the old flag was meant to.
    ================================================================ */
 
-import { requestOtp, verifyOtp } from '../shared/api.js';
+import { requestOtp, verifyOtp, requestPasswordReset } from '../shared/api.js';
 import {
   auth,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
   signInWithEmailAndPassword,
-  sendPasswordResetEmail,
   signOut,
   authErrorMessage,
 } from '../shared/firebase.js';
@@ -332,17 +331,29 @@ forgotForm?.addEventListener('submit', async (e) => {
   const email = forgotEmailInput.value.trim();
 
   if (!email || !EMAIL_RE.test(email)) {
-    showFieldError('forgotEmail', 'errForgotEmail', null, '');
+    showFieldError('forgotEmail', 'errForgotEmail', 'errForgotEmailText', 'Enter a valid email address');
     return;
   }
   clearFieldError('forgotEmail', 'errForgotEmail');
 
   setBtnLoading('btnForgotSubmit', 'forgotBtnSpinner', 'forgotBtnLabel', true);
-  /* Firebase throws auth/user-not-found for an unknown address. That is
-     swallowed on purpose: surfacing it would turn this form into an
-     account-enumeration oracle. The confirmation below is identical
-     either way. */
-  await sendPasswordResetEmail(auth, email).catch(() => {});
+
+  /* Sent through the clinic's own Gmail rather than Firebase's default
+     sender. Firebase mails these from noreply@<project>.firebaseapp.com,
+     which spam filters distrust — those were landing in spam while the
+     OTP mail from the same Gmail arrived in the inbox.
+
+     The server answers identically whether or not the address has an
+     account, so nothing here can be used to discover who works at the
+     RHU. Only a rate limit or a malformed address produces an error,
+     and neither reveals anything about the roster. */
+  try {
+    await requestPasswordReset(email);
+  } catch (err) {
+    setBtnLoading('btnForgotSubmit', 'forgotBtnSpinner', 'forgotBtnLabel', false);
+    showFieldError('forgotEmail', 'errForgotEmail', 'errForgotEmailText', err.message);
+    return;
+  }
   setBtnLoading('btnForgotSubmit', 'forgotBtnSpinner', 'forgotBtnLabel', false);
 
   document.getElementById('forgotSentEmail').textContent = email;

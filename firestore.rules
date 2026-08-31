@@ -40,6 +40,13 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Password-reset rate limits. Keyed by a hash of the address rather
+    // than the address itself, so the collection is not a readable list
+    // of who has asked to reset. Server-only either way.
+    match /reset_throttle/{key} {
+      allow read, write: if false;
+    }
+
     // Clinical data.
     match /patients/{patientId} {
       allow read: if signedInAndVerified();
