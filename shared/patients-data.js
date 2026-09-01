@@ -35,6 +35,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 import { recordActivity } from './audit-client.js';
+import { raiseAlert, resolveAlert, ALERT_TYPES } from './alerts-store.js';
 import {
   BARANGAYS,
   calcScore,
@@ -138,6 +139,53 @@ function subscribe() {
   );
 }
 
+/* ================================================================
+   ALERTS FROM READINGS
+
+   The dashboard used to derive its alert list on every page load and
+   keep it in memory, so nothing it noticed ever reached the BHW who
+   visits that patient. The same conditions are now written to the
+   shared alert store.
+
+   Driven off the roster rather than raised at the moment a reading is
+   saved, so a patient who became critical through a visit recorded on a
+   phone is flagged here too — the dashboard did not witness that
+   reading, but it can see the result.
+   ================================================================ */
+function syncAlertsFromRoster() {
+  PATIENTS.forEach((p) => {
+    /* Nothing to say about a patient with no readings yet. Silence is
+       correct here: they are not low risk, they are unmeasured. */
+    if (!p.glucose || !p.bp) return;
+
+    const [sys, dia] = String(p.bp).split('/').map(Number);
+    const detail = `Glucose ${p.glucose} mg/dL · BP ${p.bp} mmHg`;
+
+    if (p.risk === 'critical') {
+      raiseAlert({
+        patientId: p.id, patientName: p.name, barangay: p.barangay,
+        type: ALERT_TYPES.CRITICAL,
+        trigger: p.glucose >= 250 ? `Glucose ${p.glucose} mg/dL — critically high`
+          : p.glucose < 70 ? `Glucose ${p.glucose} mg/dL — hypoglycemia`
+          : `BP ${p.bp} mmHg — hypertension`,
+        source: 'web',
+      });
+      resolveAlert(p.id, ALERT_TYPES.AT_RISK);
+    } else if (p.risk === 'warning') {
+      raiseAlert({
+        patientId: p.id, patientName: p.name, barangay: p.barangay,
+        type: ALERT_TYPES.AT_RISK, trigger: detail, source: 'web',
+      });
+      resolveAlert(p.id, ALERT_TYPES.CRITICAL);
+    } else {
+      /* Back within range — both close rather than disappear, so the
+         record that they were once flagged survives. */
+      resolveAlert(p.id, ALERT_TYPES.CRITICAL);
+      resolveAlert(p.id, ALERT_TYPES.AT_RISK);
+    }
+  });
+}
+
 function announce() {
   window.dispatchEvent(new CustomEvent('diacare:patients-loaded', {
     detail: { patients: PATIENTS.length, pending: PENDING_PATIENTS.length },
@@ -151,6 +199,10 @@ subscribe();
 
 const ready = firstLoadDone.then(() => {
   announce();
+  /* After the first load, not on every snapshot: the writes below cause
+     no patient change, but running this on each one would still be a
+     write per patient per update. */
+  syncAlertsFromRoster();
 });
 
 /* Kept for callers that ask for a refresh explicitly. The snapshots

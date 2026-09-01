@@ -1,4 +1,12 @@
-import { auth, db, onAuthStateChanged } from '../shared/firebase.js';
+import {
+  auth,
+  db,
+  onAuthStateChanged,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  authErrorMessage,
+} from '../shared/firebase.js';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 /* ================================================================
@@ -212,7 +220,7 @@ document.getElementById('pwNew')?.addEventListener('input', (e) => {
 });
 
 /* Save password */
-document.getElementById('btnSavePassword')?.addEventListener('click', () => {
+document.getElementById('btnSavePassword')?.addEventListener('click', async () => {
   const current = document.getElementById('pwCurrent').value;
   const newPw   = document.getElementById('pwNew').value;
   const confirm = document.getElementById('pwConfirm').value;
@@ -243,6 +251,50 @@ document.getElementById('btnSavePassword')?.addEventListener('click', () => {
   }
   if (!valid) return;
 
+  /* This used to validate, clear the fields, and report success without
+     changing anything — the password was never touched. Nothing about
+     the screen said so, which is the worst way for it to be wrong. */
+  const user = auth.currentUser;
+  if (!user || !user.email) {
+    showToast('Your session has ended. Sign in again.', true);
+    return;
+  }
+
+  const btn = document.getElementById('btnSavePassword');
+  const originalLabel = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+  }
+
+  try {
+    /* Firebase requires a recent sign-in before a password change, and
+       re-authenticating here is also what proves the current password —
+       otherwise an unattended unlocked laptop is enough to change it. */
+    await reauthenticateWithCredential(
+      user,
+      EmailAuthProvider.credential(user.email, current),
+    );
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalLabel; }
+    const wrong = err?.code === 'auth/wrong-password'
+      || err?.code === 'auth/invalid-credential';
+    document.getElementById('errCurrent')?.classList.remove('hidden');
+    document.getElementById('pwCurrent')?.classList.add('error');
+    showToast(wrong ? 'Your current password is incorrect.' : authErrorMessage(err), true);
+    return;
+  }
+
+  try {
+    await updatePassword(user, newPw);
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalLabel; }
+    showToast(authErrorMessage(err), true);
+    return;
+  }
+
+  if (btn) { btn.disabled = false; btn.innerHTML = originalLabel; }
+
   /* Reset fields */
   ['pwCurrent','pwNew','pwConfirm'].forEach(id => {
     const el = document.getElementById(id);
@@ -254,7 +306,7 @@ document.getElementById('btnSavePassword')?.addEventListener('click', () => {
     el.querySelector('i').className = 'fa-solid fa-circle';
   });
 
-  showToast('Password updated successfully!');
+  showToast('Password updated. Use it the next time you sign in.');
 });
 
 /* ================================================================

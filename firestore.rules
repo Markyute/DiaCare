@@ -225,9 +225,22 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // The one alert store both halves share. A high reading raised on a
+    // BHW's phone appears on the RHU dashboard, and an alert acknowledged
+    // at the RHU stops nagging the worker who is standing in front of the
+    // patient. Previously the app kept its own notifications collection
+    // and the dashboard recomputed its own list from readings, so neither
+    // ever saw the other's.
+    //
+    // Ids are deterministic (patientId__type), so the same condition
+    // raised on two devices is one document rather than two alerts about
+    // the same patient.
     match /alerts/{alertId} {
-      allow read: if signedInAndVerified();
-      allow write: if signedInAndVerified();
+      allow read: if signedInAndVerified() || isBhw();
+      allow create, update: if signedInAndVerified() || isBhw();
+      // An alert is a record that something was flagged. Closing one sets
+      // resolved; deleting it would erase that it ever happened.
+      allow delete: if false;
     }
 
     // Append-only. Staff changes are written by the API with the Admin

@@ -18,6 +18,9 @@ import {
   signOut,
   onAuthStateChanged,
   getIdTokenResult,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
 import {
   getFirestore,
@@ -46,6 +49,9 @@ if (USE_EMULATORS) {
    functions under /api. See shared/api.js. */
 
 export {
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,

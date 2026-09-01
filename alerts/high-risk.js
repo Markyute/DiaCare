@@ -4,6 +4,14 @@
    Triggers: glucose ≥250 or <70 mg/dL | BP ≥140/90 mmHg
    ================================================================ */
 
+/* Aliased: this page already has its own acknowledgeAlert, which
+   handles the row in the list. This one persists it. */
+import {
+  watchAlerts,
+  acknowledgeAlert as persistAcknowledgement,
+  ALERT_TYPES,
+} from '../shared/alerts-store.js';
+
 /* ── Session Guard ──
    Lives in shared/auth-guard.js now, loaded from this page's HTML. It
    checks the Firebase session and the verified-code claim rather than a
@@ -49,28 +57,45 @@ function buildTrigger(p) {
   return glucoseFlag || bpFlag || 'Vitals within monitored range';
 }
 
-/* Acknowledged state persists per patient across reloads, same reason
-   flags do — otherwise a nurse's work is silently undone by a page
-   refresh, which is worse than not tracking it at all. */
-const ACK_KEY = 'diacare_alert_acks_v1'; // { [patientId]: true }
+/* Acknowledgement lives in the shared alert store, not in this browser.
+   It was localStorage: a nurse acknowledging an alert on her laptop left
+   it still showing on every other screen, and still nagging the BHW
+   standing in front of the patient. */
+const ACKS = {};
 
-function loadAcks() {
-  try {
-    const raw = localStorage.getItem(ACK_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+/* Alerts the app raised. The dashboard derives its own from the roster;
+   these come from a BHW's phone and would otherwise never appear here. */
+let REMOTE_ALERTS = [];
+
+watchAlerts((rows) => {
+  REMOTE_ALERTS = rows;
+
+  Object.keys(ACKS).forEach((k) => delete ACKS[k]);
+  rows.forEach((r) => {
+    if (r.acknowledged) ACKS[r.patientId] = true;
+  });
+
+  ALERTS = buildAlerts();
+  renderStats();
+  renderList();
+});
+
+/* The alert list uses its own words for a type; the shared store uses
+   the ones both halves agree on. */
+function alertTypeFor(alert) {
+  if (alert.type === 'missed') return ALERT_TYPES.NO_VISIT;
+  if (alert.type === 'atrisk') return ALERT_TYPES.AT_RISK;
+  return ALERT_TYPES.CRITICAL;
 }
 
-function saveAcks(map) {
-  try { localStorage.setItem(ACK_KEY, JSON.stringify(map)); } catch { /* private browsing */ }
+/* Named on the entry so it still says who acknowledged it after that
+   person is renamed or leaves. */
+function currentActorName() {
+  return document.getElementById('navUserName')?.textContent?.trim() || 'RHU staff';
 }
-
-const ACKS = loadAcks();
 
 function buildAlerts() {
-  return (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [])
+  const derived = (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [])
   .map((p, i) => {
     const type = p.missedToday ? 'missed' : p.risk === 'critical' ? 'critical' : p.risk === 'warning' ? 'atrisk' : null;
     if (!type) return null;
@@ -87,6 +112,46 @@ function buildAlerts() {
     };
   })
   .filter(Boolean);
+
+  /* Alerts the app raised that this page would not derive on its own —
+     a no-visit alert a BHW's phone noticed, or one about a patient whose
+     latest reading has since come back into range but whose alert has
+     not been closed. Without this the two halves show different lists
+     while both claim to show "the alerts". */
+  const derivedFor = new Set(derived.map((a) => a.patientId + '__' + a.type));
+  const roster = window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [];
+
+  const fromApp = REMOTE_ALERTS
+    .filter((r) => !r.resolved)
+    .map((r) => {
+      const type = r.type === ALERT_TYPES.NO_VISIT ? 'missed'
+        : r.type === ALERT_TYPES.AT_RISK ? 'atrisk' : 'critical';
+      if (derivedFor.has(r.patientId + '__' + type)) return null;
+
+      const p = roster.find((x) => x.id === r.patientId);
+      return {
+        id: 'R-' + r.id,
+        patientId: r.patientId,
+        name: r.patientName || p?.name || 'Unknown patient',
+        initials: p?.initials || (r.patientName || '?').slice(0, 2).toUpperCase(),
+        color: p?.color || '#6b7280',
+        age: p?.age ?? null,
+        barangay: r.barangay || p?.barangay || '',
+        source: r.source === 'app' ? 'app' : 'manual',
+        glucose: p?.glucose ?? null,
+        bp: p?.bp ?? '',
+        type,
+        trigger: r.trigger || 'Flagged from the mobile app',
+        time: r.raisedAt
+          ? r.raisedAt.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })
+          : '',
+        acknowledged: r.acknowledged,
+        flagged: !!p?.flagged,
+      };
+    })
+    .filter(Boolean);
+
+  return derived.concat(fromApp);
 }
 
 let ALERTS = buildAlerts();
@@ -317,7 +382,8 @@ function acknowledgeAlert(id) {
   if (!alert || alert.acknowledged) return;
   alert.acknowledged = true;
   ACKS[alert.patientId] = true;
-  saveAcks(ACKS);
+  persistAcknowledgement(alert.patientId, alertTypeFor(alert), currentActorName())
+    .catch((err) => console.error('Could not save the acknowledgement:', err));
   renderStats();
   renderList();
   showToast(`${alert.name} marked as acknowledged.`);
@@ -327,9 +393,15 @@ document.getElementById('btnAcknowledgeAll')?.addEventListener('click', () => {
   const filtered = getFiltered();
   let count = 0;
   filtered.forEach(a => {
-    if (!a.acknowledged) { a.acknowledged = true; ACKS[a.patientId] = true; count++; }
+    if (!a.acknowledged) {
+      a.acknowledged = true;
+      ACKS[a.patientId] = true;
+      persistAcknowledgement(a.patientId, alertTypeFor(a), currentActorName())
+        .catch((err) => console.error('Could not save the acknowledgement:', err));
+      count++;
+    }
   });
-  if (count > 0) saveAcks(ACKS);
+  /* Each acknowledgement was written above; nothing to flush here. */
   renderStats();
   renderList();
   showToast(count > 0 ? `${count} alert${count > 1 ? 's' : ''} acknowledged.` : 'All alerts already acknowledged.');
