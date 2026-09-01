@@ -331,42 +331,6 @@
       </div>
 
     </main>
-
-    <!-- EXPORT PREVIEW
-         Both exports leave the screen the moment they are clicked: a PDF
-         lands in Downloads, a CSV opens in Excel. Showing what is in it
-         first means a wrong filter or an empty period is caught here
-         rather than after the file has been sent to someone. -->
-    <div class="modal-overlay hidden" id="exportPreviewModal" role="dialog" aria-modal="true"
-      aria-labelledby="exportPreviewTitle">
-      <div class="modal-card modal-card--wide">
-        <div class="modal-hdr">
-          <div>
-            <div class="modal-title" id="exportPreviewTitle">Preview export</div>
-            <div class="modal-sub" id="exportPreviewSub">&nbsp;</div>
-          </div>
-          <button class="modal-close" id="exportPreviewClose" aria-label="Close preview" title="Close">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-
-        <div class="export-meta" id="exportPreviewMeta"></div>
-
-        <div class="export-preview-scroll">
-          <table class="export-preview-table" id="exportPreviewTable"></table>
-        </div>
-
-        <div class="export-preview-note" id="exportPreviewNote"></div>
-
-        <div class="modal-actions">
-          <button class="btn btn-outline" id="exportPreviewCancel" type="button">Cancel</button>
-          <button class="btn btn-primary" id="exportPreviewConfirm" type="button">
-            <i class="fa-solid fa-download" aria-hidden="true"></i>
-            <span id="exportPreviewConfirmLabel">Download</span>
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <div class="toast hidden" id="toast"></div>

@@ -129,7 +129,17 @@ service cloud.firestore {
 
     // Clinical data.
     match /patients/{patientId} {
-      allow read: if signedInAndVerified() || ownsPatient(resource.data);
+      // Every BHW reads the whole roster, not only their own patients.
+      // The RHU asked for this: a worker covering for a colleague, or
+      // meeting a patient from the next purok, needs the history that
+      // already exists rather than starting a second record for the same
+      // person.
+      //
+      // Worth being clear about the trade: this is the municipality's
+      // full diabetes register on every BHW's phone. Writes stay narrow -
+      // a worker still cannot approve, reassign, or file under another
+      // name - but reads are now wide.
+      allow read: if signedInAndVerified() || isBhw();
 
       allow create: if signedInAndVerified()
                     // A BHW registers patients for themselves, and they
@@ -172,8 +182,10 @@ service cloud.firestore {
       // assignedBhwId is copied onto the record rather than looked up
       // through the patient, because a rule that reads another document
       // costs a lookup for every record in every list.
-      allow read: if signedInAndVerified()
-                  || (isBhw() && resource.data.assignedBhwId == request.auth.uid);
+      // Readable by any BHW, matching the roster above: a shared patient
+      // list whose visit history was still private would show a patient
+      // with no readings, which is worse than not showing them.
+      allow read: if signedInAndVerified() || isBhw();
 
       // A record names the worker who took it, and a BHW may only file
       // one under their own name - otherwise a visit could be attributed
