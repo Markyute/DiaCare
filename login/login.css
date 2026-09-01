@@ -1122,3 +1122,19 @@ button:focus-visible {
     transform: translateX(5px);
   }
 }
+
+/* ── Autofill detection ──
+   There is no autofill event, so this animation fires on the
+   :-webkit-autofill state and login.js listens for it by name. It does
+   nothing visible; it exists to be noticed. The sign-in fields start
+   empty, and a value the browser put there without a keystroke is not
+   something the nurse typed. */
+@keyframes diacareLoginAutofill {
+  from { outline-color: transparent; }
+  to { outline-color: transparent; }
+}
+
+.field-input:-webkit-autofill {
+  animation-name: diacareLoginAutofill;
+  animation-duration: 1ms;
+}

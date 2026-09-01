@@ -105,6 +105,44 @@ setTimeout(() => {
 
 
 
+/* ================================================================
+   START EMPTY
+
+   The browser fills a saved value into the first text field it takes
+   for a login, and it does not check the shape: a BHW username landed
+   in the email box, which then failed validation and greeted the nurse
+   with a red error about something she had not typed.
+
+   The fields are cleared on load and again if the browser fills them
+   afterwards, and no validation runs until she actually submits. A
+   password manager she invokes herself still works — that fires on a
+   real interaction, not on page load.
+   ================================================================ */
+(function startLoginEmpty() {
+  const fields = ['inputEmail', 'inputPassword'];
+
+  function clearAll() {
+    fields.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    clearFieldError('inputEmail', 'errEmail');
+    clearFieldError('inputPassword', 'errPassword');
+    hideAlert();
+  }
+
+  clearAll();
+
+  /* Autofill lands after load and fires no input event, so the only
+     signal is the animation bound to :-webkit-autofill in login.css. */
+  fields.forEach((id) => {
+    document.getElementById(id)?.addEventListener('animationstart', (e) => {
+      if (e.animationName !== 'diacareLoginAutofill') return;
+      setTimeout(clearAll, 0);
+    });
+  });
+})();
+
 const form = document.getElementById('loginForm');
 const emailInput = document.getElementById('inputEmail');
 const passwordInput = document.getElementById('inputPassword');

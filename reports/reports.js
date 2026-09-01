@@ -387,7 +387,142 @@ function buildPdfPages() {
   return { pages, hostWidth, pageWidthPt, pageHeightPt, marginPt };
 }
 
-document.getElementById('btnPDF')?.addEventListener('click', async () => {
+/* ================================================================
+   WHAT AN EXPORT CONTAINS
+
+   Built once and used by both the preview and the file, so the preview
+   cannot show one thing and the download contain another. This was
+   inline in the CSV handler; the preview needed the same rows.
+   ================================================================ */
+function buildExportRows() {
+  const stamp = new Date().toISOString().slice(0, 10);
+
+  if (activeType === 'barangay') {
+    return {
+      label: 'Barangay summary',
+      filename: `barangay-report-${activePeriod}days-${stamp}`,
+      rows: [
+        ['Barangay', 'Patients', 'Avg Glucose (mg/dL)', 'Avg BP', 'Highly At Risk', 'At Risk', 'Normal', 'Referrals', 'Priority Level'],
+        ...getFilteredBarangay().map((b) => {
+          const risk = b.highRisk > 2 ? 'High Priority'
+            : b.highRisk > 0 || b.atRisk > b.normal ? 'Medium Priority' : 'Low Priority';
+          return [b.name, b.patients, b.avgGlucose, b.avgBP, b.highRisk, b.atRisk, b.normal, b.referrals, risk];
+        }),
+      ],
+    };
+  }
+
+  return {
+    label: 'Patient summary',
+    filename: `patient-report-${activePeriod}days-${stamp}`,
+    rows: [
+      ['Patient ID', 'Name', 'Age', 'Sex', 'Barangay', 'Avg Glucose (mg/dL)', 'Latest BP', 'Risk Level', 'Readings', 'Referral'],
+      ...getFilteredPatients().map((p) => [
+        p.id, p.name, p.age, p.sex, p.barangay, p.avgGlucose, p.bp,
+        p.risk === 'critical' ? 'Highly At Risk' : p.risk === 'warning' ? 'At Risk' : 'Normal',
+        p.readings,
+        p.referral === 'hospital' ? 'Hospital Referral' : p.referral === 'rhu' ? 'RHU Referral' : 'No Referral',
+      ]),
+    ],
+  };
+}
+
+/* ================================================================
+   EXPORT PREVIEW
+
+   Both exports leave the screen the moment they are clicked - a PDF
+   lands in Downloads, a CSV opens in Excel - so a wrong filter or an
+   empty period was only discovered after the file had been opened, or
+   sent to someone. This shows the rows first.
+   ================================================================ */
+const PREVIEW_ROWS = 12;
+let pendingExport = null;
+
+function escapeCell(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+function openExportPreview(kind) {
+  const { rows, filename, label } = buildExportRows();
+  const header = rows[0];
+  const body = rows.slice(1);
+
+  pendingExport = kind;
+
+  const ext = kind === 'pdf' ? 'pdf' : 'csv';
+  document.getElementById('exportPreviewSub').textContent =
+    `${label} · ${filename}.${ext}`;
+
+  const periodLabel = activePeriod === 'all' ? 'All time' : `Last ${activePeriod} days`;
+  const scope = barangayFilter && barangayFilter !== 'all' ? barangayFilter : 'All barangays';
+  const search = searchQuery ? ` · matching "${escapeCell(searchQuery)}"` : '';
+
+  document.getElementById('exportPreviewMeta').innerHTML =
+    `<span><i class="fa-solid fa-table-list"></i> ${body.length} row${body.length === 1 ? '' : 's'}</span>` +
+    `<span><i class="fa-solid fa-calendar-day"></i> ${escapeCell(periodLabel)}</span>` +
+    `<span><i class="fa-solid fa-location-dot"></i> ${escapeCell(scope)}${search}</span>`;
+
+  const table = document.getElementById('exportPreviewTable');
+  if (body.length === 0) {
+    /* An empty export is the case worth catching hardest: the file
+       downloads perfectly well and contains nothing. */
+    table.innerHTML =
+      '<tbody><tr><td class="export-empty">Nothing to export. ' +
+      'The current filters match no records - close this and widen them.</td></tr></tbody>';
+  } else {
+    const shown = body.slice(0, PREVIEW_ROWS);
+    table.innerHTML =
+      '<thead><tr>' + header.map((h) => `<th>${escapeCell(h)}</th>`).join('') + '</tr></thead>' +
+      '<tbody>' + shown.map((r) =>
+        '<tr>' + r.map((c) => `<td>${escapeCell(c)}</td>`).join('') + '</tr>').join('') +
+      '</tbody>';
+  }
+
+  const note = document.getElementById('exportPreviewNote');
+  const hidden = Math.max(body.length - PREVIEW_ROWS, 0);
+  const parts = [];
+  if (hidden > 0) parts.push(`Showing the first ${PREVIEW_ROWS} rows. All ${body.length} are in the file.`);
+  if (kind === 'pdf') parts.push('The PDF is laid out as the printed report, not as this table.');
+  note.textContent = parts.join(' ');
+  note.classList.toggle('hidden', parts.length === 0);
+
+  const confirmBtn = document.getElementById('exportPreviewConfirm');
+  confirmBtn.disabled = body.length === 0;
+  document.getElementById('exportPreviewConfirmLabel').textContent =
+    kind === 'pdf' ? 'Download PDF' : 'Download CSV';
+
+  document.getElementById('exportPreviewModal')?.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeExportPreview() {
+  document.getElementById('exportPreviewModal')?.classList.add('hidden');
+  document.body.style.overflow = '';
+  pendingExport = null;
+}
+
+document.getElementById('exportPreviewClose')?.addEventListener('click', closeExportPreview);
+document.getElementById('exportPreviewCancel')?.addEventListener('click', closeExportPreview);
+document.getElementById('exportPreviewModal')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('exportPreviewModal')) closeExportPreview();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && pendingExport) closeExportPreview();
+});
+
+document.getElementById('exportPreviewConfirm')?.addEventListener('click', () => {
+  const kind = pendingExport;
+  closeExportPreview();
+  if (kind === 'pdf') runPdfExport();
+  else if (kind === 'csv') runCsvExport();
+});
+
+document.getElementById('btnPDF')?.addEventListener('click', () => openExportPreview('pdf'));
+document.getElementById('btnCSV')?.addEventListener('click', () => openExportPreview('csv'));
+
+async function runPdfExport() {
   const btn = document.getElementById('btnPDF');
   if (!document.getElementById('reportArea') || !window.html2canvas || !window.jspdf) {
     showToast('PDF export failed to load — check your connection and try again.', true);
@@ -427,8 +562,7 @@ document.getElementById('btnPDF')?.addEventListener('click', async () => {
       pdf.addImage(imgData, 'JPEG', marginPt, marginPt, imgWidthPt, Math.min(imgHeightPt, pageHeightPt - marginPt * 2));
     }
 
-    const typeLabel = activeType === 'barangay' ? 'barangay' : 'patient';
-    pdf.save(`${typeLabel}-report-${activePeriod}days-${new Date().toISOString().slice(0, 10)}.pdf`);
+    pdf.save(buildExportRows().filename + '.pdf');
     showToast('PDF report downloaded!');
   } catch (err) {
     showToast('PDF export failed. Please try again.', true);
@@ -437,44 +571,25 @@ document.getElementById('btnPDF')?.addEventListener('click', async () => {
     btn.disabled = false;
     btn.innerHTML = originalLabel;
   }
-});
+}
 
 /* ================================================================
    EXPORT CSV
    ================================================================ */
-document.getElementById('btnCSV')?.addEventListener('click', () => {
-  let rows = [], filename = '';
+function runCsvExport() {
+  const { rows, filename } = buildExportRows();
 
-  if (activeType === 'barangay') {
-    filename = `barangay-report-${activePeriod}days-${new Date().toISOString().slice(0, 10)}.csv`;
-    rows = [
-      ['Barangay', 'Patients', 'Avg Glucose (mg/dL)', 'Avg BP', 'Highly At Risk', 'At Risk', 'Normal', 'Referrals', 'Priority Level'],
-      ...getFilteredBarangay().map(b => {
-        const risk = b.highRisk > 2 ? 'High Priority' : b.highRisk > 0 || b.atRisk > b.normal ? 'Medium Priority' : 'Low Priority';
-        return [b.name, b.patients, b.avgGlucose, b.avgBP, b.highRisk, b.atRisk, b.normal, b.referrals, risk];
-      }),
-    ];
-  } else {
-    filename = `patient-report-${activePeriod}days-${new Date().toISOString().slice(0, 10)}.csv`;
-    rows = [
-      ['Patient ID', 'Name', 'Age', 'Sex', 'Barangay', 'Avg Glucose (mg/dL)', 'Latest BP', 'Risk Level', 'Readings', 'Referral'],
-      ...getFilteredPatients().map(p => [
-        p.id, p.name, p.age, p.sex, p.barangay, p.avgGlucose, p.bp,
-        p.risk === 'critical' ? 'Highly At Risk' : p.risk === 'warning' ? 'At Risk' : 'Normal',
-        p.readings,
-        p.referral === 'hospital' ? 'Hospital Referral' : p.referral === 'rhu' ? 'RHU Referral' : 'No Referral',
-      ]),
-    ];
-  }
-
-  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  /* The BOM is what makes Excel read this as UTF-8; without it the
+     barangay names with accents arrive mangled. */
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = filename;
+  a.download = filename + '.csv';
   a.click();
+  URL.revokeObjectURL(a.href);
   showToast('Report exported as CSV!');
-});
+}
 
 /* ================================================================
    TOAST
