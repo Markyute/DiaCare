@@ -38,7 +38,10 @@
 
       <p class="qr-url" id="qrUrl">Preparing link&hellip;</p>
 
-      <a class="btn" id="btnDownload" href="diacare.apk" download>
+      <!-- Root-absolute for the same reason as the QR: this page answers
+           on both /download and /download/, and a relative href breaks on
+           the one without the trailing slash. -->
+      <a class="btn" id="btnDownload" href="/download/diacare.apk" download>
         <i class="fa-solid fa-download" aria-hidden="true"></i> Download the app
       </a>
       <p class="btn-note">Already on the phone? Use this button instead of the code.</p>

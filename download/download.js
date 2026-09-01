@@ -7,9 +7,16 @@
    cooperate — which in a barangay is a real possibility.
    ================================================================ */
 
-/* Built from the page's own address rather than hard-coded, so this
-   keeps working on a preview deployment or a custom domain later. */
-const apkUrl = new URL('diacare.apk', window.location.href).href;
+/* Root-absolute, not relative to this page.
+   A relative 'diacare.apk' resolves against the current address, and
+   this page answers on both /download and /download/ — without the
+   trailing slash the browser treats "download" as a filename, drops it,
+   and builds https://host/diacare.apk. That is a 404, and it is what the
+   QR encoded.
+
+   The origin is still read from the page rather than hard-coded, so this
+   survives a move to a custom domain. */
+const apkUrl = new URL('/download/diacare.apk', window.location.origin).href;
 
 const urlEl = document.getElementById('qrUrl');
 if (urlEl) urlEl.textContent = apkUrl;
