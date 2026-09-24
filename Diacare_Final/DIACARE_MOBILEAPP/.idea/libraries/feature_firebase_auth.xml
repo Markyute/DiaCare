@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="feature-firebase_auth">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/firebase_auth/intermediates/merged_java_res/release/mergeReleaseJavaResource/feature-firebase_auth.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

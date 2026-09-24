@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="feature-cloud_firestore">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/cloud_firestore/intermediates/merged_java_res/release/mergeReleaseJavaResource/feature-cloud_firestore.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

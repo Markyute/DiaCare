@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="classes2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/sqflite_android/intermediates/aar_main_jar/release/syncReleaseLibJars/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="feature-firebase_core">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/firebase_core/intermediates/merged_java_res/release/mergeReleaseJavaResource/feature-firebase_core.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

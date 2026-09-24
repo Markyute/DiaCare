@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="R4">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/cloud_firestore/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
