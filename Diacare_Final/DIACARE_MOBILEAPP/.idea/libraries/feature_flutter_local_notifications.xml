@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="feature-flutter_local_notifications">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/flutter_local_notifications/intermediates/merged_java_res/release/mergeReleaseJavaResource/feature-flutter_local_notifications.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="feature-jni_flutter">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/jni_flutter/intermediates/merged_java_res/release/mergeReleaseJavaResource/feature-jni_flutter.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

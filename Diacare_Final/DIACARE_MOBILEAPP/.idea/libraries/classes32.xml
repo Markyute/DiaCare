@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="classes32">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/flutter_local_notifications/intermediates/aar_main_jar/release/syncReleaseLibJars/classes.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

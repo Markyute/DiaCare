@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="feature-sqflite_android">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/sqflite_android/intermediates/merged_java_res/release/mergeReleaseJavaResource/feature-sqflite_android.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="shaders">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/app/intermediates/compressed_assets/release/compressReleaseAssets/out/assets/flutter_assets/shaders/ink_sparkle.frag.jar!/" />
+      <root url="jar://$PROJECT_DIR$/diacare/build/app/intermediates/compressed_assets/release/compressReleaseAssets/out/assets/flutter_assets/shaders/stretch_effect.frag.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

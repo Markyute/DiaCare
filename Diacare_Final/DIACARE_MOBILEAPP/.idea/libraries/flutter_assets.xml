@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="flutter_assets">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/app/intermediates/compressed_assets/release/compressReleaseAssets/out/assets/flutter_assets/FontManifest.json.jar!/" />
+      <root url="jar://$PROJECT_DIR$/diacare/build/app/intermediates/compressed_assets/release/compressReleaseAssets/out/assets/flutter_assets/NOTICES.Z.jar!/" />
+      <root url="jar://$PROJECT_DIR$/diacare/build/app/intermediates/compressed_assets/release/compressReleaseAssets/out/assets/flutter_assets/AssetManifest.bin.jar!/" />
+      <root url="jar://$PROJECT_DIR$/diacare/build/app/intermediates/compressed_assets/release/compressReleaseAssets/out/assets/flutter_assets/NativeAssetsManifest.json.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

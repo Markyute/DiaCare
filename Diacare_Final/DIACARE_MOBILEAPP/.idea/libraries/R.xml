@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="R">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/jni/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

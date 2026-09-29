@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="images">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/diacare/build/app/intermediates/compressed_assets/release/compressReleaseAssets/out/assets/flutter_assets/assets/images/logo_login.png.jar!/" />
+      <root url="jar://$PROJECT_DIR$/diacare/build/app/intermediates/compressed_assets/release/compressReleaseAssets/out/assets/flutter_assets/assets/images/logo.png.jar!/" />
+      <root url="jar://$PROJECT_DIR$/diacare/build/app/intermediates/compressed_assets/release/compressReleaseAssets/out/assets/flutter_assets/assets/images/logo_splash.png.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
