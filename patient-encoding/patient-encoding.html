@@ -45,6 +45,7 @@
               class="fa-solid fa-brain"></i><span>Risk</span></a>
           <a href="../reports/reports.html" class="tn-item"><i
               class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+          <a href="../sync-monitoring/sync-monitoring.html" class="tn-item"><i class="fa-solid fa-arrows-rotate"></i><span>Sync Monitoring</span></a>
           <a href="../personnel/user-management.html" class="tn-item" data-role-only="admin"><i
               class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
         </nav>
@@ -100,6 +101,7 @@
         <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i
             class="fa-solid fa-brain"></i><span>Risk</span></a>
         <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+        <a href="../sync-monitoring/sync-monitoring.html" class="tn-item"><i class="fa-solid fa-arrows-rotate"></i><span>Sync Monitoring</span></a>
         <a href="../personnel/user-management.html" class="tn-item" data-role-only="admin"><i
             class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
         <a href="../login/login.html" class="tn-item"><i
@@ -278,15 +280,22 @@
                 </div>
               </div>
 
+              <!-- Home Address was retired in favour of Barangay + Purok,
+                   which is what a BHW needs to find the house and what
+                   reports can group by. The app no longer collects it. -->
               <div class="enc-grid enc-grid--3 mt-14">
-                <div class="enc-field enc-field--span2">
-                  <label class="enc-label" for="patientAddress">Home Address</label>
-                  <input class="enc-input" type="text" id="patientAddress" placeholder="e.g. 45 Rizal St."
-                    maxlength="160" />
-                </div>
                 <div class="enc-field">
                   <label class="enc-label" for="patientId">Patient ID</label>
-                  <input class="enc-input" type="text" id="patientId" placeholder="Auto-generated" readonly />
+                  <input class="enc-input" type="text" id="patientId" placeholder="Assigned on save" readonly />
+                </div>
+                <!-- Assigning here is what puts this patient on a BHW's
+                     phone. Left blank, they exist only on this dashboard
+                     and no field worker is told to visit them. -->
+                <div class="enc-field">
+                  <label class="enc-label" for="assignedBhw">Assign to Field Worker</label>
+                  <select class="enc-input" id="assignedBhw">
+                    <option value="">Not assigned</option>
+                  </select>
                 </div>
               </div>
 

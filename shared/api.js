@@ -96,3 +96,9 @@ export const endSession = () => call('end-session');
 export const createStaffAccount = (payload) => call('create-staff', payload);
 export const updateStaffAccount = (payload) => call('update-staff', payload);
 export const setStaffStatus = (id, status) => call('set-staff-status', { id, status });
+
+/* Pushes an alert to one field worker's handset. The reply says whether
+   it was actually delivered — a worker who has not opened the app since
+   push was added has no device token, and the caller should not imply
+   an alert arrived when it did not. */
+export const notifyBhw = (payload) => call('notify-bhw', payload);

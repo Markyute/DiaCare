@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DiaCare RHU Libon — Dashboard</title>
+  <title>DiaCare RHU Libon — Sync Monitoring</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -12,7 +12,7 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="../shared/theme.css" />
-  <link rel="stylesheet" href="dashboard.css" />
+  <link rel="stylesheet" href="sync-monitoring.css" />
   <script type="module" src="../shared/auth-guard.js"></script>
 </head>
 
@@ -23,7 +23,7 @@
     <!-- ═══ TOP NAV ═══ -->
     <header class="topnav" id="topnav">
       <div class="topnav-inner">
-        <a href="dashboard.html" class="topnav-brand">
+        <a href="../dashboard/dashboard.html" class="topnav-brand">
           <img src="../images/diacare-logo-new.png" alt="DiaCare Logo" class="topnav-logo" />
           <span class="topnav-brand-text">
             <span class="topnav-name"><span class="tn-name-dark">Dia</span><span
@@ -33,7 +33,7 @@
         </a>
 
         <nav class="topnav-links">
-          <a href="dashboard.html" class="tn-item active" aria-current="page"><i
+          <a href="../dashboard/dashboard.html" class="tn-item"><i
               class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
           <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i
               class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
@@ -45,7 +45,7 @@
               class="fa-solid fa-brain"></i><span>Risk</span></a>
           <a href="../reports/reports.html" class="tn-item"><i
               class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
-          <a href="../sync-monitoring/sync-monitoring.html" class="tn-item"><i
+          <a href="sync-monitoring.html" class="tn-item active" aria-current="page"><i
               class="fa-solid fa-arrows-rotate"></i><span>Sync Monitoring</span></a>
           <a href="../personnel/user-management.html" class="tn-item" data-role-only="admin"><i
               class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
@@ -91,7 +91,7 @@
 
       <!-- Mobile nav panel -->
       <div class="topnav-mobile-panel" id="mobileNavPanel">
-        <a href="dashboard.html" class="tn-item active" aria-current="page"><i
+        <a href="../dashboard/dashboard.html" class="tn-item"><i
             class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
         <a href="../patient-monitoring/patient-monitoring.html" class="tn-item"><i
             class="fa-solid fa-users"></i><span>Patient Monitoring</span></a>
@@ -102,7 +102,7 @@
         <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i
             class="fa-solid fa-brain"></i><span>Risk</span></a>
         <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
-        <a href="../sync-monitoring/sync-monitoring.html" class="tn-item"><i
+        <a href="sync-monitoring.html" class="tn-item active" aria-current="page"><i
             class="fa-solid fa-arrows-rotate"></i><span>Sync Monitoring</span></a>
         <a href="../personnel/user-management.html" class="tn-item" data-role-only="admin"><i
             class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
@@ -115,165 +115,169 @@
     <main class="content" id="main">
 
       <!-- PAGE HEADER -->
-                <div class="page-hdr">
+      <div class="page-hdr">
         <div>
-          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-            <h1 class="page-title" id="greetingTitle">Hello, RHU Nurse</h1>
-                      <div class="mission-banner-meta" style="color:rgba(255,255,255,0.9)">
-              <span><i class="fa-solid fa-clock-rotate-left"></i> Last submission: <span id="lastMissionInfo">—</span></span>
-              <span><i class="fa-solid fa-map-location-dot"></i> <span id="barangaysReachedInfo">0</span> barangays with active patients</span>
-            </div>
+          <h1 class="page-title">BHW Sync Monitoring</h1>
+          <p class="page-sub">Track field uploads, last contact timestamps, and audit transmission success per Barangay Health Worker.</p>
+        </div>
+        <div class="page-actions">
+          <div class="live-indicator" title="Connected to Firestore sync_logs in real-time">
+            <span class="live-dot"></span>
+            <span class="live-text">Live Sync Listener</span>
           </div>
-          <p class="page-sub" id="greetingSub">Here's what's happening across RHU Libon today.</p>
+          <button class="btn btn-secondary" id="refreshBtn" title="Refresh data">
+            <i class="fa-solid fa-rotate"></i> Refresh
+          </button>
         </div>
       </div>
 
-      
-
-      <!-- ── ALL-TIME REFERENCE STATS ── -->
-      <div class="section-label-row">
-        <span class="section-eyebrow">ALL-TIME REFERENCE</span>
-        <span class="section-date">All patients and barangays monitored to date</span>
-      </div>
-
+      <!-- STATS RIBBON -->
       <div class="stat-ribbon">
-        <article class="stat-chip chip-green">
-          <div class="chip-icon"><i class="fa-solid fa-map-location-dot"></i></div>
-          <div>
-            <div class="chip-lbl">Barangays Reached</div>
-            <div class="chip-val" id="statBarangaysReached">0</div>
-          </div>
-        </article>
         <article class="stat-chip chip-teal">
-          <div class="chip-icon"><i class="fa-solid fa-users"></i></div>
+          <div class="chip-icon"><i class="fa-solid fa-house-medical"></i></div>
           <div>
-            <div class="chip-lbl">Total Patients</div>
-            <div class="chip-val" id="statTotalPatients">0</div>
+            <div class="chip-lbl">Total BHWs</div>
+            <div class="chip-val" id="statTotalBhw">0</div>
+            <div class="chip-delta up">Registered field workers</div>
           </div>
         </article>
-        <article class="stat-chip chip-blue">
-          <div class="chip-icon"><i class="fa-solid fa-mobile-screen"></i></div>
+
+        <article class="stat-chip chip-green">
+          <div class="chip-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
           <div>
-            <div class="chip-lbl">App Submissions</div>
-            <div class="chip-val" id="statAppSubmissions">0</div>
-            <div class="chip-delta">Visits synced from BHW handsets</div>
+            <div class="chip-lbl">Synced Today</div>
+            <div class="chip-val" id="statSyncedToday">0</div>
+            <div class="chip-delta up">Within last 24 hours</div>
           </div>
         </article>
+
         <article class="stat-chip chip-amber">
-          <div class="chip-icon"><i class="fa-solid fa-keyboard"></i></div>
+          <div class="chip-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
           <div>
-            <div class="chip-lbl">Manual Encoded</div>
-            <div class="chip-val" id="statManualEncoded">0</div>
-            <div class="chip-delta">Visits encoded at the RHU</div>
+            <div class="chip-lbl">Stale Contact</div>
+            <div class="chip-val" id="statStale">0</div>
+            <div class="chip-delta down">No sync in over 3 days</div>
           </div>
         </article>
-        <article class="stat-chip chip-red">
-          <div class="chip-icon"><i class="fa-solid fa-flag"></i></div>
+
+        <article class="stat-chip chip-blue">
+          <div class="chip-icon"><i class="fa-solid fa-list-check"></i></div>
           <div>
-            <div class="chip-lbl">Follow-up Referrals</div>
-            <div class="chip-val" id="statReferrals">0</div>
+            <div class="chip-lbl">Sync Success Rate</div>
+            <div class="chip-val" id="statSuccessRate">100%</div>
+            <div class="chip-delta up" id="statAttemptCount">0 attempts recorded</div>
           </div>
         </article>
       </div>
 
-      <!-- ── CRITICAL ALERT STRIP (shown only when patients need attention) ── -->
-      <a href="../patient-monitoring/patient-monitoring.html" class="critical-strip hidden" id="criticalStrip"
-        aria-label="Critical alert: patients need immediate attention today. Review now.">
-        <div class="critical-strip-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div class="critical-strip-text">
-          <strong id="criticalStripCount">0 patients</strong> need immediate attention today — glucose or blood pressure
-          readings are in the critical range.
-        </div>
-        <span class="critical-strip-cta">Review now <i class="fa-solid fa-arrow-right"></i></span>
-      </a>
-
-      <!-- ── TOP ROW: Risk Distribution + Recent Barangay Activity, side by side ── -->
-      <div class="dash-top-row">
-
-        <!-- Risk Distribution -->
-        <div class="dash-card">
-          <div class="dash-card-hdr">
-            <div>
-              <div class="dash-card-title">
-                <i class="fa-solid fa-chart-pie"></i> Risk Distribution
-              </div>
-              <div class="dash-card-sub">Current risk breakdown across all patients</div>
-            </div>
-          </div>
-          <div class="donut-body">
-            <div class="donut-wrap">
-              <canvas id="donutChart" role="img"
-                aria-label="Donut chart of current patient risk breakdown by high risk, at risk, and normal"></canvas>
-              <div class="donut-center">
-                <div class="donut-num" id="donutTotal">0</div>
-                <div class="donut-sub">Patients</div>
-              </div>
-            </div>
-            <div class="donut-legend" id="donutLegend"></div>
-          </div>
+      <!-- VIEW SELECTOR & FILTER BAR -->
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="search" class="search-input" id="searchInput" name="sync-filter"
+            autocomplete="off" data-form-type="other" spellcheck="false"
+            placeholder="Search BHW by name or barangay..." />
         </div>
 
-        <!-- Recent Barangay Activity -->
-        <div class="dash-card">
-          <div class="dash-card-hdr">
-            <div>
-              <div class="dash-card-title">
-                <i class="fa-solid fa-clock-rotate-left"></i> Recent Barangay Activity
-              </div>
-              <div class="dash-card-sub">Barangays with the most recent patient submissions</div>
-            </div>
+        <div class="filter-group">
+          <span class="filter-label">Status</span>
+          <div class="filter-pills">
+            <button class="pill active" data-filter="all">All BHWs</button>
+            <button class="pill pill-green" data-filter="synced-today">Active (24h or less)</button>
+            <button class="pill pill-amber" data-filter="stale">Stale (1-3d)</button>
+            <button class="pill pill-red" data-filter="overdue">Overdue (over 3d)</button>
+            <button class="pill pill-orange" data-filter="has-failed">Has Failures</button>
           </div>
-          <div class="mission-list" id="missionList"></div>
         </div>
-
       </div>
 
-      <!-- ── Recent Patient Readings — full width, below the top row ── -->
-      <div class="dash-card dash-readings-card">
-        <div class="dash-card-hdr">
-          <div>
-            <div class="dash-card-title">
-              <i class="fa-solid fa-clock-rotate-left"></i>
-              Recent Patient Readings
-            </div>
-            <div class="dash-card-sub">
-              Latest glucose and blood pressure readings from all sources
-            </div>
-          </div>
-          <a href="../patient-monitoring/patient-monitoring.html" class="dash-view-all">
-            View all <i class="fa-solid fa-arrow-right"></i>
-          </a>
-        </div>
-        <div class="recent-table-wrap">
-          <table class="recent-table">
-            <caption class="sr-only">Recent patient glucose and blood pressure readings, all sources</caption>
-            <thead>
-              <tr>
-                <th>Patient</th>
-                <th>Glucose</th>
-                <th>Blood Pressure</th>
-                <th>Status</th>
-                <th>Source</th>
-                <th>Time</th>
-              </tr>
-            </thead>
-            <tbody id="recentTbody"></tbody>
-          </table>
-        </div>
+      <!-- SECTION: BHW SUMMARY TABLE VIEW -->
+     <div id="tableView" class="table-card">
+        <table class="sync-table">
+          <thead>
+            <tr>
+              <th>BHW Name</th>
+              <th>Assigned Barangay</th>
+              <th>Last Successful Sync</th>
+              <th>Recent Status</th>
+              <th style="text-align:center">Total Attempts</th>
+              <th style="text-align:center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="syncTableBody">
+            <!-- Filled dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div id="emptyState" class="empty-state hidden">
+        <div class="empty-icon"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+        <h3 class="empty-title">No Matching Sync Records</h3>
+        <p class="empty-desc">No BHWs match the current search or status filter criteria.</p>
       </div>
 
     </main>
   </div>
 
-  <!-- Toast -->
-  <div class="toast hidden" id="toast"></div>
+  <!-- ═══ BHW SYNC HISTORY MODAL ═══ -->
+  <div class="modal-overlay hidden" id="historyModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="bhw-modal-avatar" id="modalBhwAvatar">MS</div>
+          <div>
+            <h2 class="modal-title" id="modalBhwName">Maria Santos</h2>
+            <div class="modal-sub" id="modalBhwMeta">Barangay San Jose • Purok 3</div>
+          </div>
+        </div>
+        <button class="modal-close" id="modalCloseBtn" title="Close modal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
 
+      <div class="modal-body">
+        <div class="modal-summary-ribbon">
+          <div class="m-stat">
+            <span class="m-lbl">Last Successful Sync</span>
+            <span class="m-val" id="modalLastSync">—</span>
+          </div>
+          <div class="m-stat">
+            <span class="m-lbl">Total Attempts</span>
+            <span class="m-val" id="modalTotalAttempts">0</span>
+          </div>
+          <div class="m-stat">
+            <span class="m-lbl">Success Rate</span>
+            <span class="m-val" id="modalSuccessRate">—</span>
+          </div>
+        </div>
+
+        <h3 class="timeline-title"><i class="fa-solid fa-clock-rotate-left"></i> Sync Attempt History</h3>
+        <div class="history-timeline" id="historyTimeline">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modalDismissBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Scripts -->
+  <!-- Same shared set every other page loads. Without patients-data.js
+       the bell had nothing to count; without profile.js the avatar did
+       nothing; without logout-confirm.js the mobile-menu Logout went to
+       the sign-in page with the session still alive. -->
   <script src="../shared/notifications.js"></script>
   <script src="../shared/profile.js"></script>
   <script type="module" src="../shared/session.js"></script>
   <script type="module" src="../shared/logout-confirm.js"></script>
   <script type="module" src="../shared/patients-data.js"></script>
-  <script type="module" src="dashboard.js"></script>
+  <script type="module" src="sync-monitoring.js"></script>
 </body>
 
 </html>

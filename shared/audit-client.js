@@ -32,6 +32,8 @@ const ACTIONS = {
   PATIENT_UNFLAGGED: 'cleared the follow-up flag on',
   PATIENT_APPROVED: 'approved the registration of',
   PATIENT_REJECTED: 'rejected the registration of',
+  PATIENT_ASSIGNED: 'assigned a field worker to',
+  VISIT_CORRECTED: 'corrected a visit for',
 };
 
 /* Looked up once. The name is copied into each entry rather than joined

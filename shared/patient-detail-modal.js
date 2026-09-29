@@ -107,9 +107,7 @@
   }
 
   function riskPillHtml(risk, size) {
-    const cls = risk === 'critical' ? 'risk-pill--critical' : risk === 'warning' ? 'risk-pill--warning' : 'risk-pill--normal';
-    const icon = risk === 'critical' ? 'fa-triangle-exclamation' : risk === 'warning' ? 'fa-circle-exclamation' : 'fa-circle-check';
-    const lbl = risk === 'critical' ? 'Highly At Risk' : risk === 'warning' ? 'At Risk' : 'Normal';
+    const { cls, icon, lbl } = window.DiaCarePatients.riskMeta(risk);
     const style = size === 'sm' ? ' style="font-size:11px;padding:2px 8px"' : '';
     return `<span class="risk-pill ${cls}"${style}><i class="fa-solid ${icon}"></i>${lbl}</span>`;
   }
@@ -175,7 +173,6 @@
         reviewField('Last Name', patient.lastName),
         reviewField('Date of Birth', patient.dob),
         reviewField('Sex', patient.sex),
-        reviewField('Home Address', patient.address),
         reviewField('Barangay', patient.barangay),
         reviewField('Purok', patient.purok),
         reviewField('Contact Number', patient.contactNumber),

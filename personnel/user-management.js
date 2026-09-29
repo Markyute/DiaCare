@@ -149,13 +149,6 @@ function renderStats() {
   document.getElementById('statNurses').textContent = PERSONNEL.filter(p => DASHBOARD_ROLES.includes(p.role) && p.status === 'active').length;
   document.getElementById('statBHW').textContent = PERSONNEL.filter(p => p.role === 'bhw' && p.status === 'active').length;
   document.getElementById('statInactive').textContent = PERSONNEL.filter(p => p.status === 'inactive').length;
-
-  /* Login screen's "community health workers on the platform" tile —
-     every BHW account that exists, active or not, since it's a
-     headcount of who's registered rather than who's active today. */
-  window.DiaCareStats?.publish({
-    communityHealthWorkers: PERSONNEL.filter(p => p.role === 'bhw').length,
-  });
 }
 
 /* ================================================================

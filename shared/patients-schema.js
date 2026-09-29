@@ -42,24 +42,86 @@ export const BARANGAYS = [
    themselves.
    ================================================================ */
 
-/* A patient with no reading yet — approved but not yet visited, which
+/* A patient with no reading yet — registered but not yet visited, which
    is a real state — has nothing to score. That is "nothing abnormal
-   observed", not zero risk of anything. */
+   observed", not zero risk of anything.
+
+   Each vital is scored on its own and the worst one wins, which is what
+   the app's RiskClassifier does: any single critical reading makes the
+   patient critical. Two earlier behaviours are deliberately gone.
+
+   The old version returned 0 unless BOTH a glucose and a blood pressure
+   were present, so a visit recording glucose 300 and no BP came out as
+   'normal' on every tile, table and chart — the most dangerous reading
+   the app can take, displayed as healthy.
+
+   It also added the two scores together, which disagreed with the app in
+   both directions: BP 145/95 alone scored 40 ('warning' here, 'Highly At
+   Risk' on the handset), while a moderate glucose plus a moderate BP
+   summed past 60 and read 'critical' where the app said 'At Risk'. A BHW
+   and a nurse looking at the same visit now get the same answer. */
 export function calcScore(glucose, bpStr) {
-  if (!bpStr || !glucose) return 0;
-  const [sys, dia] = String(bpStr).split('/').map(Number);
-  let score = 0;
-  if (glucose >= 250 || glucose < 70) score += 60;
-  else if (glucose >= 180) score += 35;
-  if (sys >= 140 || dia >= 90) score += 40;
-  else if (sys >= 120 || dia >= 80) score += 20;
-  return score;
+  /* bpStr is accepted but no longer used — every existing caller still
+     passes it, and keeping the parameter means none of them need to
+     change. The score is now based on the glucose reading alone. */
+  if (glucose === null || glucose === undefined || glucose <= 0) return null;
+
+  const SEVERE_LOW_FLOOR = 20;   // near-coma hypoglycemia, scaling floor
+  const MILD_LOW = 54;           // ADA Level 1/2 hypoglycemia boundary
+  const NORMAL_LOW = 70;         // WHO/ADA normal lower bound
+  const NORMAL_HIGH = 199;       // upper bound of normal/at-target range
+  const HIGH_WARN = 249;         // WHO diagnostic threshold zone ends here
+  const SEVERE_HIGH_CEIL = 400;  // severe hyperglycemia scaling ceiling
+
+  // Severe hypoglycemia: < 54 mg/dL — Highly At Risk
+  if (glucose < MILD_LOW) {
+    const clamped = Math.max(glucose, SEVERE_LOW_FLOOR);
+    const t = (MILD_LOW - clamped) / (MILD_LOW - SEVERE_LOW_FLOOR);
+    return Math.round(60 + t * 40);
+  }
+
+  // Mild hypoglycemia: 54–69 mg/dL — At Risk
+  if (glucose < NORMAL_LOW) {
+    const t = (NORMAL_LOW - glucose) / (NORMAL_LOW - MILD_LOW);
+    return Math.round(30 + t * 29);
+  }
+
+  // Normal: 70–199 mg/dL
+  if (glucose <= NORMAL_HIGH) {
+    const t = (glucose - NORMAL_LOW) / (NORMAL_HIGH - NORMAL_LOW);
+    return Math.round(t * 29);
+  }
+
+  // Hyperglycemia: 200–249 mg/dL — At Risk
+  if (glucose <= HIGH_WARN) {
+    const t = (glucose - (NORMAL_HIGH + 1)) / (HIGH_WARN - (NORMAL_HIGH + 1));
+    return Math.round(30 + t * 29);
+  }
+
+  // Severe hyperglycemia: ≥ 250 mg/dL — Highly At Risk
+  const clamped = Math.min(glucose, SEVERE_HIGH_CEIL);
+  const t = (clamped - (HIGH_WARN + 1)) / (SEVERE_HIGH_CEIL - (HIGH_WARN + 1));
+  return Math.round(60 + t * 40);
 }
 
 export function scoreToLevel(score) {
+  if (score === null || score === undefined) return '';
   if (score >= 60) return 'critical';
   if (score >= 30) return 'warning';
   return 'normal';
+}
+
+/* Shared pill text/class so every page labels the four states the same
+   way. An empty level is a patient or visit with no glucose and no BP
+   on record — nobody has measured them — and it must never fall through
+   to "Normal", which is what the per-page ternaries used to do. */
+export function riskMeta(risk) {
+  switch (risk) {
+    case 'critical': return { cls: 'risk-pill--critical', lbl: 'Highly At Risk', icon: 'fa-triangle-exclamation' };
+    case 'warning':  return { cls: 'risk-pill--warning',  lbl: 'At Risk',        icon: 'fa-circle-exclamation' };
+    case 'normal':   return { cls: 'risk-pill--normal',   lbl: 'Normal',         icon: 'fa-circle-check' };
+    default:         return { cls: 'risk-pill--none',     lbl: 'Not yet assessed', icon: 'fa-circle-question' };
+  }
 }
 
 /* Display-only label. 'app' and 'manual' remain the stored values every
@@ -195,9 +257,13 @@ export function patientToView(id, p, records) {
     assignedBhwId: p.assignedBhwId || '',
     /* The app writes Pending / Approved / Inactive; the dashboard has
        always said active. Normalised here so neither side has to know
-       about the other's vocabulary. */
-    status: String(p.status || 'approved').toLowerCase() === 'pending' ? 'pending'
-      : String(p.status || '').toLowerCase() === 'inactive' ? 'inactive' : 'active',
+       about the other's vocabulary.
+
+       'pending' now normalises to active along with approved: the
+       approval queue is gone, so a registration synced from a handset
+       is a patient on arrival. Only 'inactive' — the old rejections —
+       stays distinct, so those rows stay out of the roster. */
+    status: String(p.status || '').toLowerCase() === 'inactive' ? 'inactive' : 'active',
 
     /* Derived for display */
     name: fullName(p.firstName, p.middleName, p.lastName),

@@ -360,21 +360,21 @@
 }
 
 .recent-table tbody tr.row-critical {
-  background: var(--status-critical-bg);
+  background: #ffffff;
   border-left: 3px solid var(--status-critical);
 }
 
 .recent-table tbody tr.row-critical:hover {
-  background: #fbdedb;
+  background: var(--brand-50);
 }
 
 .recent-table tbody tr.row-warning {
-  background: var(--status-warning-bg);
+  background: #ffffff;
   border-left: 3px solid var(--status-warning);
 }
 
 .recent-table tbody tr.row-warning:hover {
-  background: #ffecc7;
+  background: var(--brand-50);
 }
 
 .pt-cell {

@@ -321,15 +321,35 @@ document.getElementById('btnSavePassword')?.addEventListener('click', async () =
    ALERT PREFERENCES TAB — unlike Risk Thresholds, these are personal
    notification settings (which alerts to show, sound, browser popups),
    not shared classification rules, so there's no app-sync risk in
-   letting them actually persist. Saved to localStorage and restored
-   on load, same pattern used for pending-patient approvals elsewhere
-   on this site.
+   letting them persist per browser. Saved to localStorage; read by
+   shared/notifications.js on every page, which is what makes them do
+   something — they used to be saved and never read.
    ================================================================ */
 const ALERT_PREF_KEY = 'diacare_alert_preferences_v1';
 const ALERT_PREF_IDS = [
   'alertCriticalGlucose', 'alertCriticalBP', 'alertAtRisk', 'alertMissed',
-  'alertWorsening', 'alertBrowser', 'alertSound',
+  'alertBrowser', 'alertSound',
 ];
+
+/* A browser popup needs the browser's permission, which can only be
+   asked for from a click. Ask the moment the toggle goes on, and turn it
+   back off if the answer is no — a toggle that says "on" while the
+   browser will never show anything is the kind of setting this tab used
+   to be full of. */
+document.getElementById('alertBrowser')?.addEventListener('change', async (e) => {
+  if (!e.target.checked) return;
+  if (!('Notification' in window)) {
+    e.target.checked = false;
+    showToast('This browser does not support popup notifications.', true);
+    return;
+  }
+  if (Notification.permission === 'granted') return;
+  const result = await Notification.requestPermission();
+  if (result !== 'granted') {
+    e.target.checked = false;
+    showToast('Popup notifications were not allowed by the browser.', true);
+  }
+});
 
 function loadAlertPreferences() {
   try {

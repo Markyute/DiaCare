@@ -245,10 +245,12 @@ img {
 }
 
 .topnav-logo {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 10px;
-  object-fit: cover;
+  object-fit: contain;
+  background: #ffffff;
+  padding: 2px;
   display: block;
 }
 
@@ -1163,6 +1165,12 @@ a.tn-notif-item {
 .risk-pill--warning {
   background: var(--status-warning-bg);
   color: var(--status-warning);
+}
+
+.risk-pill--none {
+  background: var(--bg-alt, #f1f5f4);
+  color: var(--ink-soft, #4e6467);
+  border: 1px solid var(--border, #d6e1df);
 }
 
 .risk-pill--normal {

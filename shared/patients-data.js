@@ -31,15 +31,23 @@ import {
   doc,
   addDoc,
   updateDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit,
+  writeBatch,
   serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js';
 
 import { recordActivity } from './audit-client.js';
 import { raiseAlert, resolveAlert, ALERT_TYPES } from './alerts-store.js';
+import { notifyBhw } from './api.js';
 import {
   BARANGAYS,
   calcScore,
   scoreToLevel,
+  riskMeta,
   sourceToVisitLabel,
   patientToView,
   recordToHistory,
@@ -49,6 +57,10 @@ import {
 /* Stable references — filled, never reassigned. See the note above. */
 const PATIENTS = [];
 const PENDING_PATIENTS = [];
+/* Rejected registrations. Kept rather than dropped on the floor: the
+   record of a refusal is worth having, and a page that wants to show
+   one now has somewhere to read it from. */
+const REJECTED_PATIENTS = [];
 
 let loadError = null;
 
@@ -75,8 +87,23 @@ function rebuild() {
      today matters more than the person recorded in March. */
   views.sort((a, b) => (b.lastVisit?.getTime() || 0) - (a.lastVisit?.getTime() || 0));
 
-  replaceContents(PATIENTS, views.filter((p) => p.status !== 'pending'));
-  replaceContents(PENDING_PATIENTS, views.filter((p) => p.status === 'pending'));
+  /* There is no approval step any more. A patient a BHW registers on a
+     household visit lands in the roster the moment their handset syncs,
+     the same as one a nurse encodes here — the RHU was reviewing
+     registrations it had no way to verify anyway, and the queue only
+     meant a patient stayed invisible to the dashboard until someone
+     clicked Approve.
+
+     'pending' is still accepted here because patients already sitting
+     in the old queue carry it, and older handsets in the field still
+     write it on sync. Both read as part of the roster now.
+
+     'inactive' stays out. It is written by rejectPatient, which no
+     longer has a caller, but the existing rejected rows should not
+     reappear in the monitoring list, the stat tiles and the reports. */
+  replaceContents(PATIENTS, views.filter((p) => p.status !== 'inactive'));
+  replaceContents(PENDING_PATIENTS, []);
+  replaceContents(REJECTED_PATIENTS, views.filter((p) => p.status === 'inactive'));
 }
 
 /* Live subscriptions rather than a one-off read. A BHW's phone syncing a
@@ -84,6 +111,8 @@ function rebuild() {
    laptop, reaches every open dashboard within a second instead of on
    the next refresh — which is the whole point of the bell being a live
    count rather than a snapshot of whenever the page happened to load. */
+const RECORD_WINDOW = 5000;
+
 let seenPatients = false;
 let seenRecords = false;
 let firstLoad;
@@ -113,8 +142,20 @@ function subscribe() {
     }
   );
 
+  /* Capped and newest-first rather than the whole collection. Patients
+     are bounded by the municipality's population, but visits are not —
+     every household round adds more, forever, and an uncapped listener
+     re-downloads all of them on every page of the dashboard.
+
+     RECORD_WINDOW is generous enough that no patient's visible history
+     is cut short at today's volumes; when it stops being generous the
+     fix is a per-patient query on open, not a bigger number. */
   onSnapshot(
-    collection(db, 'health_records'),
+    query(
+      collection(db, 'health_records'),
+      orderBy('visitDate', 'desc'),
+      limit(RECORD_WINDOW)
+    ),
     (snap) => {
       rawRecords = new Map();
       snap.forEach((d) => {
@@ -162,14 +203,16 @@ function syncAlertsFromRoster() {
     const detail = `Glucose ${p.glucose} mg/dL · BP ${p.bp} mmHg`;
 
     if (p.risk === 'critical') {
+      const trigger = p.glucose >= 250 ? `Glucose ${p.glucose} mg/dL — critically high`
+        : p.glucose < 70 ? `Glucose ${p.glucose} mg/dL — hypoglycemia`
+        : `BP ${p.bp} mmHg — hypertension`;
       raiseAlert({
         patientId: p.id, patientName: p.name, barangay: p.barangay,
         type: ALERT_TYPES.CRITICAL,
-        trigger: p.glucose >= 250 ? `Glucose ${p.glucose} mg/dL — critically high`
-          : p.glucose < 70 ? `Glucose ${p.glucose} mg/dL — hypoglycemia`
-          : `BP ${p.bp} mmHg — hypertension`,
+        trigger,
         source: 'web',
       });
+      pushCriticalToBhw(p, trigger);
       resolveAlert(p.id, ALERT_TYPES.AT_RISK);
     } else if (p.risk === 'warning') {
       raiseAlert({
@@ -183,6 +226,37 @@ function syncAlertsFromRoster() {
       resolveAlert(p.id, ALERT_TYPES.CRITICAL);
       resolveAlert(p.id, ALERT_TYPES.AT_RISK);
     }
+  });
+}
+
+/* Sends a critical reading to the phone of the worker who visits that
+   patient. syncAlertsFromRoster() runs on every snapshot, so this keeps
+   its own set of patients already pushed for — without it a worker's
+   handset would buzz again every time any record in the collection
+   changed. The set lives for the life of the page: the alert is also on
+   the dashboard and in the app's own list, so the cost of a missed
+   repeat is far lower than the cost of a phone that will not stop. */
+const pushedCritical = new Set();
+
+function pushCriticalToBhw(patient, trigger) {
+  if (!patient.assignedBhwId) return;
+  const key = `${patient.id}:${trigger}`;
+  if (pushedCritical.has(key)) return;
+  pushedCritical.add(key);
+
+  notifyBhw({
+    bhwId: patient.assignedBhwId,
+    title: 'High risk: ' + patient.name,
+    body: `${trigger}. Follow-up visit recommended.`,
+    type: 'high_risk',
+    patientId: patient.id,
+    patientName: patient.name,
+  }).catch((err) => {
+    /* Never surfaced to the nurse: the alert is already on screen and in
+       the store, and a failed push is not a failed alert. Dropped from
+       the set so a later snapshot can try again. */
+    pushedCritical.delete(key);
+    console.warn('Could not push the alert to the field worker:', err);
   });
 }
 
@@ -285,6 +359,151 @@ function setPatientFlag(patientId, flagged, meta) {
   return patient;
 }
 
+/* ================================================================
+   CORRECTING A VISIT
+
+   A mistyped glucose drives the patient's risk classification, their
+   alerts, and every chart they appear in until it is fixed. The app can
+   now correct its own visits; this is the same for the RHU, which is
+   where the clinical judgement actually sits.
+
+   The record keeps its id, its visit date, and who recorded it — this
+   is the same visit with the numbers corrected, not a new one. Writing
+   a second record instead would leave the wrong reading in the history
+   and in every average taken from it.
+   ================================================================ */
+async function updateVisit(patientId, recordId, visit) {
+  const [sys, dia] = String(visit.bp || '').split('/').map(Number);
+  const riskLevel = scoreToLevel(calcScore(Number(visit.glucose), visit.bp));
+
+  const changes = {
+    bloodGlucose: Number(visit.glucose) || null,
+    systolicBP: Number.isFinite(sys) ? sys : null,
+    diastolicBP: Number.isFinite(dia) ? dia : null,
+    weight: Number(visit.weight) || null,
+    height: Number(visit.height) || null,
+    temp: Number(visit.temp) || null,
+    bmi: Number(visit.bmi) || null,
+    medAdherence: visit.medicationAdherence || '',
+    insulinUse: !!visit.insulinUse,
+    medicationName: visit.medicationName || '',
+    dosage: visit.dosage || '',
+    observations: visit.notes || '',
+    referral: visit.referral || 'none',
+    riskLevel,
+    updatedAt: serverTimestamp(),
+  };
+
+  await updateDoc(doc(db, 'health_records', recordId), changes);
+
+  /* Risk on the patient reflects their most recent visit. Correcting an
+     older one must not stamp a stale classification over the current
+     one, so it is only written when this is the newest record. */
+  const records = rawRecords.get(patientId) || [];
+  const newest = records
+    .slice()
+    .sort((a, b) => (b.visitDate?.getTime() || 0) - (a.visitDate?.getTime() || 0))[0];
+  if (newest && newest.id === recordId) {
+    updateDoc(doc(db, 'patients', patientId), {
+      riskLevel,
+      updatedAt: serverTimestamp(),
+    }).catch((err) => console.error('Could not update the patient risk level:', err));
+  }
+
+  const subject = rawPatients.get(patientId);
+  recordActivity('VISIT_CORRECTED', {
+    targetId: patientId,
+    targetName: subject
+      ? [subject.firstName, subject.lastName].filter(Boolean).join(' ')
+      : '',
+    detail: changes.bloodGlucose ? 'Glucose ' + changes.bloodGlucose + ' mg/dL' : '',
+  });
+}
+
+/* ================================================================
+   BHW ROSTER + ASSIGNMENT
+
+   A patient's assignedBhwId is the only link between them and a
+   handset: the app pulls `patients where assignedBhwId == my uid`.
+   A patient encoded here at the RHU is written with an empty one, so
+   until a nurse assigns them they exist on this dashboard and on no
+   phone at all — the worker covering that purok never learns to visit
+   them, and registers them a second time if they meet in the field.
+   ================================================================ */
+const BHW_ROSTER = [];
+let bhwRosterLoaded = false;
+
+async function loadBhwRoster() {
+  if (bhwRosterLoaded) return BHW_ROSTER;
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'users'), where('role', '==', 'bhw'))
+    );
+    replaceContents(BHW_ROSTER, snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        name: (data.fullName || data.username || 'BHW').trim(),
+        barangay: data.barangay || '',
+        purok: data.purok || '',
+        status: (data.status || 'active').toLowerCase(),
+      };
+    }).filter((b) => b.status === 'active')
+      .sort((a, b) => a.name.localeCompare(b.name)));
+    bhwRosterLoaded = true;
+  } catch (err) {
+    console.error('Could not read the BHW roster:', err);
+  }
+  return BHW_ROSTER;
+}
+
+function bhwName(id) {
+  if (!id) return '';
+  const found = BHW_ROSTER.find((b) => b.id === id);
+  return found ? found.name : id;
+}
+
+/* The patient's visits carry their own copy of assignedBhwId — it is
+   what the app's rules and its pull query read, without paying for a
+   lookup per record. Reassigning the patient without moving the visits
+   would hand the new worker a patient whose history stops at the
+   handover, so both move together in one batch. */
+async function assignPatient(patientId, bhwId) {
+  const patient = localPatient(patientId);
+  if (patient) patient.assignedBhwId = bhwId;
+
+  const stored = rawPatients.get(patientId);
+  if (stored) stored.assignedBhwId = bhwId;
+
+  const batch = writeBatch(db);
+  batch.update(doc(db, 'patients', patientId), {
+    assignedBhwId: bhwId,
+    updatedAt: serverTimestamp(),
+  });
+
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'health_records'), where('patientId', '==', patientId))
+    );
+    snap.docs.forEach((d) => {
+      batch.update(d.ref, {
+        assignedBhwId: bhwId,
+        updatedAt: serverTimestamp(),
+      });
+    });
+    await batch.commit();
+  } catch (err) {
+    console.error('Could not assign the patient:', err);
+    throw err;
+  }
+
+  recordActivity('PATIENT_ASSIGNED', {
+    targetId: patientId,
+    targetName: patient?.name || '',
+    detail: bhwName(bhwId) ? 'Assigned to ' + bhwName(bhwId) : 'Unassigned',
+  });
+}
+
 function approvePatient(id) {
   const idx = PENDING_PATIENTS.findIndex((p) => p.id === id);
   if (idx !== -1) {
@@ -358,7 +577,6 @@ async function addEncodedPatient(patient) {
     birthDate,
     birthDateApproximate: !(patient.birthDate || patient.dob),
     sex: patient.sex || '',
-    address: patient.address || '',
     barangay: patient.barangay || '',
     purok: patient.purok || '',
     contactNumber: patient.contactNumber || '',
@@ -375,7 +593,7 @@ async function addEncodedPatient(patient) {
     /* A nurse encoding at the RHU is itself the approval; the pending
        state exists for patients a BHW registered on a household visit. */
     status: 'approved',
-    riskLevel: patient.risk || 'normal',
+    riskLevel: patient.risk || '',
     flagged: false,
     flagReason: '',
     flagNotes: '',
@@ -488,6 +706,7 @@ async function addVisitToPatient(patientId, visit) {
 window.DiaCarePatients = {
   PATIENTS,
   PENDING_PATIENTS,
+  REJECTED_PATIENTS,
   BARANGAYS,
   ready,
   refresh,
@@ -498,7 +717,13 @@ window.DiaCarePatients = {
   setPatientFlag,
   approvePatient,
   rejectPatient,
+  updateVisit,
+  loadBhwRoster,
+  bhwName,
+  assignPatient,
+  BHW_ROSTER,
   calcScore,
   scoreToLevel,
+  riskMeta,
   sourceToVisitLabel,
 };

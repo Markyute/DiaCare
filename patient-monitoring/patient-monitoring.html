@@ -42,6 +42,8 @@
           <a href="../trends/glucose-trends.html" class="tn-item"><i class="fa-solid fa-chart-line"></i><span>Trends</span></a>
           <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
           <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+          <a href="../sync-monitoring/sync-monitoring.html" class="tn-item"><i
+              class="fa-solid fa-arrows-rotate"></i><span>Sync Monitoring</span></a>
           <a href="../personnel/user-management.html" class="tn-item" data-role-only="admin"><i class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
         </nav>
 
@@ -94,6 +96,8 @@
         <a href="../trends/glucose-trends.html" class="tn-item"><i class="fa-solid fa-chart-line"></i><span>Trends</span></a>
         <a href="../risk-analysis/risk-analysis.html" class="tn-item"><i class="fa-solid fa-brain"></i><span>Risk</span></a>
         <a href="../reports/reports.html" class="tn-item"><i class="fa-solid fa-chart-pie"></i><span>Reports</span></a>
+        <a href="../sync-monitoring/sync-monitoring.html" class="tn-item"><i
+            class="fa-solid fa-arrows-rotate"></i><span>Sync Monitoring</span></a>
         <a href="../personnel/user-management.html" class="tn-item" data-role-only="admin"><i class="fa-solid fa-user-gear"></i><span>Personnel</span></a>
         <a href="../login/login.html" class="tn-item"><i class="fa-solid fa-right-from-bracket"></i><span>Logout</span></a>
       </div>
@@ -106,7 +110,7 @@
       <div class="page-hdr">
         <div>
           <h1 class="page-title">Patient Monitoring</h1>
-          <p class="page-sub">Every approved patient, whether added by a BHW or an RHU Nurse — open a profile to see their full history</p>
+          <p class="page-sub">Every patient, whether added by a BHW or an RHU Nurse — open a profile to see their full history</p>
         </div>
         <div class="page-hdr-actions">
           <a href="../patient-encoding/patient-encoding.html" class="btn-encode">
@@ -164,22 +168,6 @@
         </article>
       </div>
 
-      <!-- ── PENDING APPROVALS — BHW-submitted patients awaiting review.
-           Hidden entirely when the queue is empty, so it doesn't sit
-           around as permanent clutter on a normal day. ── -->
-      <div class="dash-card pending-approvals-card hidden" id="pendingApprovalsCard">
-        <div class="dash-card-hdr">
-          <div>
-            <div class="dash-card-title">
-              <i class="fa-solid fa-user-clock"></i> Pending Patient Approvals
-              <span class="pending-count-badge" id="pendingCountBadge">0</span>
-            </div>
-            <div class="dash-card-sub">New patients submitted by BHWs, awaiting your review before they appear in monitoring</div>
-          </div>
-        </div>
-        <div class="pending-approvals-list" id="pendingApprovalsList"></div>
-      </div>
-
       <!-- ── FILTERS ── -->
       <div class="filter-bar">
         <div class="search-wrap">
@@ -193,6 +181,9 @@
             <button class="pill pill-red" data-filter="critical">Highly At Risk</button>
             <button class="pill pill-amber" data-filter="warning">At Risk</button>
             <button class="pill pill-green" data-filter="normal">Normal</button>
+            <!-- Nobody would think to open a profile to discover the
+                 assignment is missing, so it gets its own filter. -->
+            <button class="pill pill-amber" data-filter="unassigned" id="pillUnassigned">Unassigned</button>
           </div>
         </div>
         <div class="filter-group">
@@ -213,10 +204,13 @@
           <thead>
             <tr>
               <th>Patient ID</th>
-              <th>Patient Name</th>
+              <th>Patient</th>
               <th>Barangay</th>
-              <th>Risk Level</th>
-              <th>Last Record</th>
+              <th>Risk Score</th>
+              <th>Current Level</th>
+              <th>Avg Glucose</th>
+              <th>Latest BP</th>
+              <th>Trend</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -276,6 +270,22 @@
             <div class="detail-section-title"><i class="fa-solid fa-phone"></i> Emergency Contact</div>
             <div class="review-field-grid" id="profileEmergencyGrid"></div>
           </div>
+
+          <!-- ── ASSIGNED BHW — the link between this patient and a
+               handset. A patient encoded here has none until it is set,
+               and an unassigned patient is on no worker's round. ── -->
+          <div class="detail-section">
+            <div class="detail-section-title"><i class="fa-solid fa-user-nurse"></i> Assigned Field Worker</div>
+            <div class="assign-row">
+              <select class="assign-select" id="assignBhwSelect" aria-label="Assign this patient to a BHW">
+                <option value="">Not assigned — visible only at the RHU</option>
+              </select>
+              <button class="btn btn-primary" id="assignBhwBtn" disabled>
+                <i class="fa-solid fa-check"></i> Save
+              </button>
+            </div>
+            <div class="assign-note" id="assignBhwNote"></div>
+          </div>
         </div>
 
         <!-- TAB 2: Health Records — every visit/measurement, newest
@@ -325,87 +335,91 @@
     </div>
   </div>
 
-  <!-- ── PENDING PATIENT REVIEW MODAL — separate from the vitals modal
-       above on purpose. A patient this new has no health record yet
-       (the app itself won't let a BHW log one until they're approved),
-       so this shows registration details instead — mirroring the app's
-       own Add New Patient form section-by-section, so a reviewer sees
-       exactly what the BHW actually submitted. ── -->
-  <div class="modal-overlay hidden" id="pendingDetailModal">
-    <div class="modal-card">
+  <!-- ── CORRECT VISIT MODAL — edits an existing reading in place.
+       The record keeps its id and date; only the numbers change, so the
+       wrong value stops driving risk, alerts and averages. ── -->
+  <div class="modal-overlay hidden" id="correctVisitModal">
+    <div class="modal-card modal-card--sm">
       <div class="modal-hdr">
-        <div class="modal-patient-info" id="pendingModalPatientInfo"></div>
-        <button class="modal-close" id="pendingModalClose" aria-label="Close modal" title="Close">
+        <div>
+          <div class="modal-title">Correct Visit</div>
+          <div class="modal-sub" id="correctVisitWhen">—</div>
+        </div>
+        <button class="modal-close" id="correctVisitClose" aria-label="Close modal" title="Close">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
       <div class="modal-body">
-
-        <div class="detail-section">
-          <div class="detail-section-title"><i class="fa-solid fa-user"></i> Personal Information</div>
-          <div class="review-field-grid" id="pendingPersonalGrid"></div>
+        <div class="correct-grid">
+          <div class="mfield-group">
+            <label class="mfield-label" for="cvGlucose">Blood Glucose (mg/dL)</label>
+            <input class="mfield-input" type="number" id="cvGlucose" min="20" max="600" step="1" />
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="cvSystolic">Systolic (mmHg)</label>
+            <input class="mfield-input" type="number" id="cvSystolic" min="50" max="260" step="1" />
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="cvDiastolic">Diastolic (mmHg)</label>
+            <input class="mfield-input" type="number" id="cvDiastolic" min="30" max="200" step="1" />
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="cvWeight">Weight (kg)</label>
+            <input class="mfield-input" type="number" id="cvWeight" min="10" max="400" step="0.1" />
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="cvHeight">Height (cm)</label>
+            <input class="mfield-input" type="number" id="cvHeight" min="50" max="250" step="0.1" />
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="cvTemp">Temperature (°C)</label>
+            <input class="mfield-input" type="number" id="cvTemp" min="30" max="45" step="0.1" />
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="cvAdherence">Medication Taken</label>
+            <select class="mfield-input" id="cvAdherence">
+              <option value="taken">Taken as scheduled</option>
+              <option value="partial">Partially taken</option>
+              <option value="missed">Missed / not taken</option>
+            </select>
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="cvReferral">Referral</label>
+            <select class="mfield-input" id="cvReferral">
+              <option value="none">No referral</option>
+              <option value="rhu">Referred to RHU</option>
+              <option value="hospital">Referred to hospital</option>
+            </select>
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="cvMedication">Medication</label>
+            <input class="mfield-input" type="text" id="cvMedication" maxlength="80" />
+          </div>
+          <div class="mfield-group">
+            <label class="mfield-label" for="cvDosage">Dosage</label>
+            <input class="mfield-input" type="text" id="cvDosage" maxlength="60" />
+          </div>
         </div>
 
-        <div class="detail-section">
-          <div class="detail-section-title"><i class="fa-solid fa-notes-medical"></i> Medical Information</div>
-          <div class="review-field-grid" id="pendingMedicalGrid"></div>
+        <label class="correct-check">
+          <input type="checkbox" id="cvInsulin" /> Insulin used at this visit
+        </label>
+
+        <div class="mfield-group">
+          <label class="mfield-label" for="cvNotes">Observations</label>
+          <textarea class="mfield-input resize-y" id="cvNotes" rows="2" maxlength="400"></textarea>
         </div>
 
-        <div class="detail-section">
-          <div class="detail-section-title"><i class="fa-solid fa-phone"></i> Emergency Contact</div>
-          <div class="review-field-grid" id="pendingEmergencyGrid"></div>
+        <div class="correct-note">
+          <i class="fa-solid fa-circle-info"></i>
+          The visit keeps its original date and whoever recorded it. The
+          patient's risk is recalculated from the corrected reading.
         </div>
-
-        <div class="pending-submission-note" id="pendingSubmissionNote"></div>
-
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" id="pendingModalCloseBtn">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- APPROVE CONFIRM MODAL -->
-  <div class="modal-overlay hidden" id="approveConfirmModal">
-    <div class="modal-card modal-card--sm">
-      <div class="modal-hdr">
-        <div class="modal-title">Approve Patient?</div>
-        <button class="modal-close" id="approveConfirmClose" aria-label="Close modal" title="Close">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="modal-body text-center">
-        <div class="confirm-icon confirm-icon--success"><i class="fa-solid fa-user-check"></i></div>
-        <p class="confirm-text" id="approveConfirmText">Are you sure you want to approve this patient's
-          registration? They will appear in monitoring right away.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" id="approveConfirmCancel">Cancel</button>
-        <button class="btn btn-primary" id="approveConfirmOk">
-          <i class="fa-solid fa-check"></i> Approve
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- REJECT CONFIRM MODAL -->
-  <div class="modal-overlay hidden" id="rejectConfirmModal">
-    <div class="modal-card modal-card--sm">
-      <div class="modal-hdr">
-        <div class="modal-title">Reject Patient?</div>
-        <button class="modal-close" id="rejectConfirmClose" aria-label="Close modal" title="Close">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="modal-body text-center">
-        <div class="confirm-icon"><i class="fa-solid fa-user-xmark"></i></div>
-        <p class="confirm-text" id="rejectConfirmText">Are you sure you want to reject this patient's registration?
-          This cannot be undone.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" id="rejectConfirmCancel">Cancel</button>
-        <button class="btn btn-danger" id="rejectConfirmOk">
-          <i class="fa-solid fa-xmark"></i> Reject
+        <button class="btn btn-outline" id="correctVisitCancel">Cancel</button>
+        <button class="btn btn-primary" id="correctVisitSave">
+          <i class="fa-solid fa-check"></i> Save Correction
         </button>
       </div>
     </div>

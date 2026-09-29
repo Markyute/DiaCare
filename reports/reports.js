@@ -35,13 +35,65 @@ document.addEventListener('click', (e) => {
    Monitoring, Alerts, and Risk Analysis instead of independent
    hardcoded numbers.
    ================================================================ */
-let BARANGAY_DATA = window.DiaCarePatients ? window.DiaCarePatients.getBarangaySummary() : [];
+/* Both tables are built for the selected period — see buildReportData().
+   They used to be the whole roster with the latest reading, whatever
+   period tab was pressed, so "Last 7 Days" and "Last 90 Days" printed
+   identical reports. */
+let BARANGAY_DATA = [];
+let PATIENT_DATA = [];
 
-let PATIENT_DATA = (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : []).map(p => ({
-  ...p,
-  avgGlucose: p.glucose,
-  readings: p.visitCount,
-}));
+/* A patient's row for the report is their visits inside the window: mean
+   glucose and BP over those visits, how many there were, and whether any
+   of them ended in a referral. A patient with no visit in the window is
+   not in that period's report — a 7-day report of someone last seen in
+   March would be a report of nothing. Risk stays the patient's current
+   classification, since that is what a nurse acts on. */
+function buildReportData(days) {
+  const cutoff = Date.now() - Number(days) * 86400000;
+  const roster = window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [];
+  const barangays = window.DiaCarePatients ? window.DiaCarePatients.BARANGAYS : [];
+
+  PATIENT_DATA = roster.map(p => {
+    const visits = (p.history || []).filter(h => h.visitDate && h.visitDate.getTime() >= cutoff);
+    if (!visits.length) return null;
+    const withG = visits.filter(h => h.glucose);
+    const withBp = visits.filter(h => h.bp);
+    const avgGlucose = withG.length
+      ? Math.round(withG.reduce((a, h) => a + h.glucose, 0) / withG.length) : 0;
+    const bpParts = withBp.map(h => h.bp.split('/').map(Number));
+    const avgSys = bpParts.length ? Math.round(bpParts.reduce((a, b) => a + b[0], 0) / bpParts.length) : 0;
+    const avgDia = bpParts.length ? Math.round(bpParts.reduce((a, b) => a + b[1], 0) / bpParts.length) : 0;
+    return {
+      ...p,
+      avgGlucose,
+      bp: bpParts.length ? `${avgSys}/${avgDia}` : '',
+      readings: visits.length,
+      referral: visits.some(h => h.referral === 'hospital') ? 'hospital'
+        : visits.some(h => h.referral === 'rhu') ? 'rhu' : 'none',
+    };
+  }).filter(Boolean);
+
+  BARANGAY_DATA = barangays.map(name => {
+    const pts = PATIENT_DATA.filter(p => p.barangay === name);
+    const withG = pts.filter(p => p.avgGlucose);
+    const withBp = pts.filter(p => p.bp);
+    const bpParts = withBp.map(p => p.bp.split('/').map(Number));
+    const avgGlucose = withG.length ? Math.round(withG.reduce((a, p) => a + p.avgGlucose, 0) / withG.length) : 0;
+    const avgSys = bpParts.length ? Math.round(bpParts.reduce((a, b) => a + b[0], 0) / bpParts.length) : 0;
+    const avgDia = bpParts.length ? Math.round(bpParts.reduce((a, b) => a + b[1], 0) / bpParts.length) : 0;
+    return {
+      name,
+      patients: pts.length,
+      avgGlucose, avgSys, avgDia,
+      avgBP: bpParts.length ? `${avgSys}/${avgDia}` : '—',
+      highRisk: pts.filter(p => p.risk === 'critical').length,
+      atRisk: pts.filter(p => p.risk === 'warning').length,
+      normal: pts.filter(p => p.risk === 'normal').length,
+      referrals: pts.filter(p => p.referral !== 'none').length,
+    };
+  });
+}
+buildReportData(30);
 
 /* ================================================================
    STATE
@@ -50,25 +102,6 @@ let activeType = 'barangay';
 let activePeriod = '30';
 let searchQuery = '';
 let barangayFilter = 'all';
-
-/* ================================================================
-   PUBLISH PLATFORM-WIDE STATS — for the login screen's headline
-   tiles. Deliberately computed from the raw, unfiltered shared
-   roster (not getFilteredBarangay()/renderStats() below, which
-   reflect whatever filter is currently active on this page).
-   ================================================================ */
-function publishPlatformStats() {
-  if (!window.DiaCareStats || !window.DiaCarePatients) return;
-  const patients = window.DiaCarePatients.PATIENTS;
-  const totalPatients = patients.length;
-  const elevatedRisk = patients.filter(p => p.risk === 'critical' || p.risk === 'warning').length;
-  window.DiaCareStats.publish({
-    totalPatients,
-    totalBarangays: BARANGAY_DATA.length,
-    elevatedRiskPct: Math.round((elevatedRisk / Math.max(totalPatients, 1)) * 100),
-  });
-}
-publishPlatformStats();
 
 /* ================================================================
    FILTER DATA
@@ -130,7 +163,17 @@ function renderStats() {
   }
 
   const countEl = document.getElementById('reportCount');
-  if (countEl) countEl.textContent = `Showing ${data.length} records`;
+  if (countEl) {
+    /* A period report only holds patients seen in the window, so the
+       count drops as the window shrinks. Saying how many were left out
+       stops that reading as patients gone missing. */
+    const roster = window.DiaCarePatients ? window.DiaCarePatients.PATIENTS.length : 0;
+    const unseen = Math.max(0, roster - PATIENT_DATA.length);
+    const noun = activeType === 'barangay' ? 'barangays' : 'patients';
+    countEl.textContent = unseen > 0
+      ? `Showing ${data.length} ${noun} · ${unseen} patient${unseen === 1 ? '' : 's'} with no visit in the last ${activePeriod} days`
+      : `Showing ${data.length} ${noun}`;
+  }
 }
 
 /* ================================================================
@@ -149,7 +192,7 @@ function renderBarangayTable() {
   tbody.innerHTML = data.map(b => {
     const risk = b.highRisk > 2 ? 'critical' : b.highRisk > 0 || b.atRisk > b.normal ? 'warning' : 'normal';
     const rowCls = risk === 'critical' ? 'row-critical' : risk === 'warning' ? 'row-warning' : '';
-    const pillCls = risk === 'critical' ? 'risk-pill--critical' : risk === 'warning' ? 'risk-pill--warning' : 'risk-pill--normal';
+    const pillCls = window.DiaCarePatients.riskMeta(risk).cls;
     const pillIcon = risk === 'critical' ? 'fa-triangle-exclamation' : risk === 'warning' ? 'fa-circle-exclamation' : 'fa-circle-check';
     // "Priority Level" is a distinct, barangay-level rollup concept — not
     // the same thing as an individual patient's risk classification (the
@@ -186,9 +229,9 @@ function renderPatientTable() {
   }
 
   tbody.innerHTML = data.map(p => {
-    const pillCls = p.risk === 'critical' ? 'risk-pill--critical' : p.risk === 'warning' ? 'risk-pill--warning' : 'risk-pill--normal';
+    const pillCls = window.DiaCarePatients.riskMeta(p.risk).cls;
     const pillIcon = p.risk === 'critical' ? 'fa-triangle-exclamation' : p.risk === 'warning' ? 'fa-circle-exclamation' : 'fa-circle-check';
-    const pillLbl = p.risk === 'critical' ? 'Highly At Risk' : p.risk === 'warning' ? 'At Risk' : 'Normal';
+    const pillLbl = window.DiaCarePatients.riskMeta(p.risk).lbl;
     const glcCls = p.avgGlucose >= 250 ? 'glc-critical' : p.avgGlucose >= 180 ? 'glc-warning' : 'glc-normal';
     const rowCls = p.risk === 'critical' ? 'row-critical' : p.risk === 'warning' ? 'row-warning' : '';
     const refCls = p.referral === 'hospital' ? 'status-badge--referred' : p.referral === 'rhu' ? 'status-badge--referred' : 'status-badge--noreferral';
@@ -271,7 +314,8 @@ document.querySelectorAll('.period-tab').forEach(tab => {
     document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     activePeriod = tab.dataset.period;
-    renderStats();
+    buildReportData(activePeriod);
+    switchView();
     updatePrintMeta();
   });
 });
@@ -460,7 +504,7 @@ document.getElementById('btnCSV')?.addEventListener('click', () => {
       ['Patient ID', 'Name', 'Age', 'Sex', 'Barangay', 'Avg Glucose (mg/dL)', 'Latest BP', 'Risk Level', 'Readings', 'Referral'],
       ...getFilteredPatients().map(p => [
         p.id, p.name, p.age, p.sex, p.barangay, p.avgGlucose, p.bp,
-        p.risk === 'critical' ? 'Highly At Risk' : p.risk === 'warning' ? 'At Risk' : 'Normal',
+        window.DiaCarePatients.riskMeta(p.risk).lbl,
         p.readings,
         p.referral === 'hospital' ? 'Hospital Referral' : p.referral === 'rhu' ? 'RHU Referral' : 'No Referral',
       ]),
@@ -513,17 +557,11 @@ window.addEventListener('load', () => {
    ================================================================ */
 
 function recomputeFromRoster() {
-  BARANGAY_DATA = window.DiaCarePatients ? window.DiaCarePatients.getBarangaySummary() : [];
-  PATIENT_DATA = (window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : []).map(p => ({
-    ...p,
-    avgGlucose: p.glucose,
-    readings: p.visitCount,
-  }));
+  buildReportData(activePeriod);
 }
 
 window.addEventListener('diacare:patients-loaded', () => {
   recomputeFromRoster();
-  publishPlatformStats();
   updatePrintMeta();
   switchView();
 });

@@ -189,6 +189,15 @@ function drawBarangayChart() {
   const labEl = document.getElementById('barangayLabels');
   if (labEl) labEl.innerHTML = BARANGAY_RISK.map(b => `<span>${b.name}</span>`).join('');
 }
+/* Deterministic 6-digit number from a patient's long Firestore ID, so
+   the same patient always shows the same short ID on every load. */
+function sixDigitId(id) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return String(100000 + (hash % 900000));
+}
 
 /* ================================================================
    PATIENT RISK TABLE
@@ -207,11 +216,10 @@ function renderTable() {
   });
 
   tbody.innerHTML = filtered.map((p, i) => {
-    const rankCls   = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
     const rowCls    = p.level==='critical'?'row-critical':p.level==='warning'?'row-warning':'';
-    const pillCls   = p.level==='critical'?'risk-pill--critical':p.level==='warning'?'risk-pill--warning':'risk-pill--normal';
+    const pillCls   = window.DiaCarePatients.riskMeta(p.level).cls;
     const pillIcon  = p.level==='critical'?'fa-triangle-exclamation':p.level==='warning'?'fa-circle-exclamation':'fa-circle-check';
-    const pillLbl   = p.level==='critical'?'Highly At Risk':p.level==='warning'?'At Risk':'Normal';
+    const pillLbl   = window.DiaCarePatients.riskMeta(p.level).lbl;
     const glcCls    = p.avgGlucose>=250||p.avgGlucose<70?'glc-critical':p.avgGlucose>=180?'glc-warning':'glc-normal';
     const barColor  = p.level==='critical'?'#d0362f':p.level==='warning'?'#c2760a':'#22a866';
     const scoreNumCls= p.level==='critical'?'glc-critical':p.level==='warning'?'glc-warning':'glc-normal';
@@ -219,24 +227,18 @@ function renderTable() {
     const trendIcon = p.trend==='worsening'?'fa-arrow-trend-up':p.trend==='improving'?'fa-arrow-trend-down':'fa-minus';
     const trendLbl  = p.trend==='worsening'?'Worsening':p.trend==='improving'?'Improving':'Stable';
 
-    return `<tr class="${rowCls}">
-      <td><div class="rank-badge ${rankCls}">${i+1}</div></td>
+       return `<tr class="${rowCls}">
+      <td><span style="font-family:var(--font-mono);font-size:12.5px;color:#000000">${sixDigitId(p.id)}</span></td>
       <td>
-        <div class="pt-cell">
-          <div class="pt-av" style="background:${p.color}">${p.initials}</div>
-          <div>
-            <div class="pt-name">${p.name}</div>
-            <div class="pt-id">${p.id}</div>
-          </div>
-        </div>
+        <div class="pt-name">${p.name}</div>
       </td>
       <td style="font-size:13px;color:var(--ink)">${p.barangay}</td>
       <td>
         <div class="score-wrap">
           <div class="score-bar-bg">
-            <div class="score-bar" style="width:${p.score}%;background:${barColor}"></div>
+            <div class="score-bar" style="width:${p.riskScore}%;background:${barColor}"></div>
           </div>
-          <span class="score-num ${scoreNumCls}">${p.score}</span>
+          <span class="score-num ${scoreNumCls}">${p.riskScore}%</span>
         </div>
       </td>
       <td><span class="risk-pill ${pillCls}"><i class="fa-solid ${pillIcon}"></i>${pillLbl}</span></td>
@@ -278,8 +280,8 @@ document.getElementById('btnExport')?.addEventListener('click', () => {
   const rows = [
     ['Rank','Patient ID','Name','Barangay','Risk Score','Risk Level','Avg Glucose (mg/dL)','Latest BP','Trend'],
     ...SCORED.map((p, i) => [
-      i+1, p.id, p.name, p.barangay, p.score,
-      p.level==='critical'?'Highly At Risk':p.level==='warning'?'At Risk':'Normal',
+      i+1, p.id, p.name, p.barangay, p.riskScore,
+      window.DiaCarePatients.riskMeta(p.level).lbl,
       p.avgGlucose, p.bp, p.trend.charAt(0).toUpperCase()+p.trend.slice(1)
     ]),
   ];

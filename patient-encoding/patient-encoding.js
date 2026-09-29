@@ -45,8 +45,14 @@ let encodedCount = 0;
 /* ================================================================
    AUTO-GENERATE PATIENT ID
    ================================================================ */
+/* The record's id is the Firestore document id, assigned on save — the
+   same id the app carries for that patient and Patient Monitoring shows.
+   This used to mint 'P-' plus four random digits before anything was
+   saved: two encodings could collide, and the number never matched the
+   id anywhere else on the site. */
+const ID_PENDING = 'Assigned on save';
 function generateId() {
-  return 'P-' + String(Math.floor(Math.random() * 9000) + 1000);
+  return ID_PENDING;
 }
 
 window.addEventListener('load', () => {
@@ -166,7 +172,7 @@ let encodingMode = 'new';
 let selectedExistingPatient = null;
 
 const identityFieldIds = ['firstName', 'middleName', 'lastName', 'patientDob',
-  'patientSex', 'patientPurok', 'patientContact', 'patientAddress',
+  'patientSex', 'patientPurok', 'patientContact',
   'emergencyName', 'emergencyNumber'];
 
 function setIdentityFieldsLocked(locked) {
@@ -233,7 +239,6 @@ function populateFromExistingPatient(patient) {
   document.getElementById('patientSex').value = patient.sex ?? '';
   document.getElementById('patientPurok').value = patient.purok ?? '';
   document.getElementById('patientContact').value = patient.contactNumber ?? '';
-  document.getElementById('patientAddress').value = patient.address ?? '';
   document.getElementById('emergencyName').value = patient.emergencyContactName ?? '';
   document.getElementById('emergencyNumber').value = patient.emergencyContactNumber ?? '';
   document.getElementById('diagnosisDate').value = toDateInputValue(patient.diagnosisDateRaw);
@@ -262,7 +267,7 @@ document.querySelectorAll('input[name="encodingMode"]').forEach(radio => {
       clearExistingPatientSelection();
       setIdentityFieldsLocked(false);
       ['firstName', 'middleName', 'lastName', 'patientDob', 'patientPurok',
-        'patientContact', 'patientAddress', 'emergencyName', 'emergencyNumber',
+        'patientContact', 'emergencyName', 'emergencyNumber',
         'diagnosisDate', 'attendingPhysician', 'patientAge'].forEach((fid) => {
         const el = document.getElementById(fid);
         if (el) el.value = '';
@@ -529,7 +534,7 @@ function getRecordedByName() {
 /* ================================================================
    SAVE PATIENT
    ================================================================ */
-function savePatient(action) {
+async function savePatient(action) {
   if (!validate()) {
     showToast('Please fill in all required fields.', '#ef4444');
     return;
@@ -544,13 +549,13 @@ function savePatient(action) {
   const age = ageFromDob(dob);
   const purok = document.getElementById('patientPurok').value.trim();
   const contactNumber = document.getElementById('patientContact').value.trim();
-  const address = document.getElementById('patientAddress').value.trim();
   const emergencyContactName = document.getElementById('emergencyName').value.trim();
   const emergencyContactNumber = document.getElementById('emergencyNumber').value.trim();
   const diagnosisDate = document.getElementById('diagnosisDate').value;
   const attendingPhysician = document.getElementById('attendingPhysician').value.trim();
   const sex = document.getElementById('patientSex').value;
   const barangay = document.getElementById('patientBarangay').value;
+  const assignedBhwId = document.getElementById('assignedBhw')?.value || '';
   const glucose = parseFloat(document.getElementById('glucose').value);
   const sys = parseFloat(document.getElementById('bpSystolic').value);
   const dia = parseFloat(document.getElementById('bpDiastolic').value);
@@ -597,7 +602,7 @@ function savePatient(action) {
     id, name, age, sex, barangay, glucose,
     firstName, middleName, lastName,
     birthDate: dob,
-    purok, contactNumber, address,
+    purok, contactNumber, assignedBhwId,
     emergencyContactName, emergencyContactNumber,
     diagnosisDate, attendingPhysician,
     bp: `${sys}/${dia}`, weight, height, bmi,
@@ -626,7 +631,14 @@ function savePatient(action) {
       // Analysis. Now it's persisted through the same shared store
       // every other page reads from, so a manually-encoded patient
       // actually shows up site-wide.
-      window.DiaCarePatients.addEncodedPatient(patient);
+      try {
+        const saved = await window.DiaCarePatients.addEncodedPatient(patient);
+        if (saved && saved.id) patient.id = saved.id;
+      } catch (err) {
+        console.error('Could not save the patient:', err);
+        showToast('Could not save the patient. Check your connection and try again.', '#ef4444');
+        return;
+      }
     }
   }
 
@@ -642,12 +654,12 @@ function savePatient(action) {
   renderEncodedList();
 
   /* Show success modal */
-  const riskLabel = risk === 'critical' ? 'Highly At Risk' :
-    risk === 'warning' ? 'At Risk' : 'Normal';
+  const riskLabel = window.DiaCarePatients.riskMeta(risk).lbl;
   const riskCls = risk === 'critical' ? 'status-pill--critical' :
-    risk === 'warning' ? 'status-pill--warning' : 'status-pill--good';
+    risk === 'warning' ? 'status-pill--warning' :
+    risk === 'normal' ? 'status-pill--good' : 'status-pill--noreferral';
 
-  document.getElementById('successName').textContent = `${name} — ${id}`;
+  document.getElementById('successName').textContent = `${name} — ${patient.id}`;
   document.getElementById('successRisk').innerHTML =
     `<span class="status-pill ${riskCls}">
       ${riskLabel} &nbsp;|&nbsp; ${glucose} mg/dL &nbsp;|&nbsp; ${sys}/${dia} mmHg
@@ -765,11 +777,55 @@ renderBarangayList();
 /* ================================================================
    FORM SUBMIT
    ================================================================ */
-document.getElementById('encodingForm')?.addEventListener('submit', (e) => {
+document.getElementById('encodingForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const action = e.submitter?.dataset.action || 'done';
+
+  /* A patient a BHW already registered would otherwise be written again
+     under a new id, splitting their readings across two records — the
+     same split the app now warns about from the other direction. Only
+     for new registrations: "Log a visit for an existing patient" is
+     already choosing a specific record. */
+  if (encodingMode !== 'existing' && !(await confirmNotDuplicate())) return;
+
   savePatient(action);
 });
+
+/* Returns true when it is safe to register. A match is a warning, not a
+   block: two people really can share a name and a birth date, and the
+   nurse in the room knows which case this is. */
+async function confirmNotDuplicate() {
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+  const dob = document.getElementById('patientDob').value;
+  if (!firstName || !lastName || !dob || !window.DiaCarePatients) return true;
+
+  const birth = new Date(dob);
+  const match = window.DiaCarePatients.PATIENTS.find((p) => {
+    if (!p.birthDate) return false;
+    return p.firstName?.trim().toLowerCase() === firstName.toLowerCase()
+      && p.lastName?.trim().toLowerCase() === lastName.toLowerCase()
+      && p.birthDate.getFullYear() === birth.getFullYear()
+      && p.birthDate.getMonth() === birth.getMonth()
+      && p.birthDate.getDate() === birth.getDate();
+  });
+  if (!match) return true;
+
+  const heldBy = match.assignedBhwId
+    ? window.DiaCarePatients.bhwName(match.assignedBhwId)
+    : '';
+  const who = heldBy
+    ? `is already registered by ${heldBy}`
+    : 'is already on the register';
+
+  return window.confirm(
+    `${match.name} ${who}.\n\n`
+    + 'Registering them again creates a second record, and their readings '
+    + 'will be split across both. Use "Log a visit for an existing '
+    + 'patient" instead, unless this is a different person.\n\n'
+    + 'Register anyway?'
+  );
+}
 
 /* ================================================================
    SUCCESS MODAL — Add Another
@@ -855,3 +911,26 @@ function showToast(msg, color = '#059669') {
   clearTimeout(showToast._t);
   showToast._t = setTimeout(() => t.classList.add('hidden'), 3500);
 }
+
+/* ================================================================
+   FIELD-WORKER PICKER
+
+   A patient encoded here reaches a handset only through
+   assignedBhwId — the app pulls on exactly that field. Offering the
+   choice at registration is what stops a backlog of patients who are
+   on this dashboard and on nobody's round.
+   ================================================================ */
+async function fillAssignedBhwOptions() {
+  const select = document.getElementById('assignedBhw');
+  if (!select || !window.DiaCarePatients) return;
+  const roster = await window.DiaCarePatients.loadBhwRoster();
+  select.innerHTML = ['<option value="">Not assigned</option>']
+    .concat(roster.map(b => {
+      const where = [b.barangay, b.purok].filter(Boolean).join(' · ');
+      return `<option value="${b.id}">${b.name}${where ? ' — ' + where : ''}</option>`;
+    }))
+    .join('');
+}
+
+window.addEventListener('diacare:patients-loaded', fillAssignedBhwOptions);
+fillAssignedBhwOptions();

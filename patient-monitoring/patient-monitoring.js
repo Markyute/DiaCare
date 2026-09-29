@@ -65,239 +65,6 @@ function renderStats() {
 }
 
 /* ================================================================
-   PENDING APPROVALS — BHW-submitted patients awaiting BHN review.
-   Kept separate from PATIENTS/getFiltered() entirely: an unapproved
-   patient shouldn't appear in risk stats, the donut chart, or the
-   main table (or count toward any barangay's coverage) until someone
-   here actually approves them, same as the app-side workflow this
-   mirrors.
-   ================================================================ */
-function renderPendingApprovals() {
-  const card = document.getElementById('pendingApprovalsCard');
-  const list = document.getElementById('pendingApprovalsList');
-  const badge = document.getElementById('pendingCountBadge');
-  if (!card || !list || !window.DiaCarePatients) return;
-
-  const pending = window.DiaCarePatients.PENDING_PATIENTS;
-  if (badge) badge.textContent = pending.length;
-
-  if (pending.length === 0) {
-    card.classList.add('hidden');
-    return;
-  }
-  card.classList.remove('hidden');
-
-  list.innerHTML = pending.map(p => `
-    <div class="pending-item" data-id="${p.id}">
-      <div class="pt-av" style="background:${p.color}">${p.initials}</div>
-      <div class="pending-item-info">
-        <div class="pending-item-name">${p.name}</div>
-        <div class="pending-item-meta">${p.age} / ${p.sex} · Brgy. ${p.barangay} · Submitted via ${p.source === 'app' ? 'mobile app' : 'manual encoding'} at ${p.time}</div>
-      </div>
-      <div class="pending-item-actions">
-        <button class="btn-view-pending" data-action="view" data-id="${p.id}" title="View ${p.name}'s full details">
-          <i class="fa-solid fa-eye"></i> View
-        </button>
-        <button class="btn-approve" data-action="approve" data-id="${p.id}" title="Approve ${p.name}">
-          <i class="fa-solid fa-check"></i> Approve
-        </button>
-        <button class="btn-reject" data-action="reject" data-id="${p.id}" title="Reject ${p.name}">
-          <i class="fa-solid fa-xmark"></i> Reject
-        </button>
-      </div>
-    </div>`).join('');
-
-  list.querySelectorAll('[data-action]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      const patient = pending.find(p => p.id === id);
-      if (btn.dataset.action === 'view') {
-        // Dedicated registration-review modal — not the vitals modal
-        // used for regular monitored patients — since a patient this
-        // new has no health record yet to show.
-        if (patient) openPendingDetail(patient);
-        return;
-      }
-      if (btn.dataset.action === 'approve') {
-        // Both approve and reject are one-way — confirm first instead of
-        // acting on the raw click, in case of an accidental tap/misclick.
-        openApproveConfirm(patient);
-      } else {
-        openRejectConfirm(patient);
-      }
-    });
-  });
-}
-
-/* ================================================================
-   APPROVE / REJECT CONFIRM MODALS — guard the one-way approve/reject
-   actions behind an explicit confirmation, in case of an accidental
-   click.
-   ================================================================ */
-let pendingApprovePatient = null;
-
-function openApproveConfirm(patient) {
-  pendingApprovePatient = patient;
-  const textEl = document.getElementById('approveConfirmText');
-  if (textEl) {
-    textEl.textContent = patient
-      ? `Are you sure you want to approve ${patient.name}'s registration? They will appear in monitoring right away.`
-      : `Are you sure you want to approve this patient's registration? They will appear in monitoring right away.`;
-  }
-  document.getElementById('approveConfirmModal')?.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeApproveConfirm() {
-  document.getElementById('approveConfirmModal')?.classList.add('hidden');
-  document.body.style.overflow = '';
-  pendingApprovePatient = null;
-}
-
-document.getElementById('approveConfirmClose')?.addEventListener('click', closeApproveConfirm);
-document.getElementById('approveConfirmCancel')?.addEventListener('click', closeApproveConfirm);
-document.getElementById('approveConfirmModal')?.addEventListener('click', (e) => {
-  if (e.target.id === 'approveConfirmModal') closeApproveConfirm();
-});
-document.getElementById('approveConfirmOk')?.addEventListener('click', () => {
-  if (!pendingApprovePatient) return;
-  window.DiaCarePatients.approvePatient(pendingApprovePatient.id);
-  showToast(`${pendingApprovePatient.name || 'Patient'} approved — now visible in monitoring.`);
-  closeApproveConfirm();
-  renderPendingApprovals();
-  renderTable();
-  renderStats();
-});
-
-let pendingRejectPatient = null;
-
-function openRejectConfirm(patient) {
-  pendingRejectPatient = patient;
-  const textEl = document.getElementById('rejectConfirmText');
-  if (textEl) {
-    textEl.textContent = patient
-      ? `Are you sure you want to reject ${patient.name}'s registration? This cannot be undone.`
-      : `Are you sure you want to reject this patient's registration? This cannot be undone.`;
-  }
-  document.getElementById('rejectConfirmModal')?.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeRejectConfirm() {
-  document.getElementById('rejectConfirmModal')?.classList.add('hidden');
-  document.body.style.overflow = '';
-  pendingRejectPatient = null;
-}
-
-document.getElementById('rejectConfirmClose')?.addEventListener('click', closeRejectConfirm);
-document.getElementById('rejectConfirmCancel')?.addEventListener('click', closeRejectConfirm);
-document.getElementById('rejectConfirmModal')?.addEventListener('click', (e) => {
-  if (e.target.id === 'rejectConfirmModal') closeRejectConfirm();
-});
-document.getElementById('rejectConfirmOk')?.addEventListener('click', () => {
-  if (!pendingRejectPatient) return;
-  window.DiaCarePatients.rejectPatient(pendingRejectPatient.id);
-  showToast(`${pendingRejectPatient.name || 'Patient'} rejected.`, '#ef4444');
-  closeRejectConfirm();
-  // Approving/rejecting changes both queues, and approving adds a
-  // real row to the main table — refresh everything that depends
-  // on patient counts, not just the pending list itself.
-  renderPendingApprovals();
-  renderTable();
-  renderStats();
-});
-
-/* ================================================================
-   PENDING PATIENT REVIEW MODAL — shows registration details (name,
-   DOB, address, purok, contact, diabetes type, diagnosis date,
-   medications, physician, emergency contact) exactly matching the
-   app's own Add New Patient form, section by section. Separate from
-   openDetail()/detailModal above, which is for vitals on already-
-   approved patients — a pending patient has none yet.
-   ================================================================ */
-let currentPendingPatient = null;
-
-function reviewField(label, value) {
-  const hasValue = value && value !== 'Not specified';
-  return `
-    <div class="review-field">
-      <div class="review-field-label">${label}</div>
-      <div class="review-field-value${hasValue ? '' : ' review-field-value--empty'}">${hasValue ? value : 'Not specified'}</div>
-    </div>`;
-}
-
-function openPendingDetail(patient) {
-  currentPendingPatient = patient;
-
-  const infoEl = document.getElementById('pendingModalPatientInfo');
-  if (infoEl) {
-    infoEl.innerHTML = `
-      <div class="modal-av" style="background:${patient.color}">${patient.initials}</div>
-      <div>
-        <div class="modal-name">${patient.name}</div>
-        <div class="modal-meta">${patient.id} · Awaiting BHN approval</div>
-      </div>`;
-  }
-
-  const personalEl = document.getElementById('pendingPersonalGrid');
-  if (personalEl) {
-    personalEl.innerHTML = [
-      reviewField('First Name', patient.firstName),
-      reviewField('Middle Initial', patient.middleName),
-      reviewField('Last Name', patient.lastName),
-      reviewField('Date of Birth', patient.dob),
-      reviewField('Sex', patient.sex),
-      reviewField('Home Address', patient.address),
-      reviewField('Barangay', patient.barangay),
-      reviewField('Purok', patient.purok),
-      reviewField('Contact Number', patient.contactNumber),
-    ].join('');
-  }
-
-  const medicalEl = document.getElementById('pendingMedicalGrid');
-  if (medicalEl) {
-    medicalEl.innerHTML = [
-      reviewField('Diabetes Type', patient.diabetesType),
-      reviewField('Date of Diagnosis', patient.diagnosisDate),
-      reviewField('Current Medications', patient.medications),
-      reviewField('Attending Physician', patient.attendingPhysician),
-    ].join('');
-  }
-
-  const emergencyEl = document.getElementById('pendingEmergencyGrid');
-  if (emergencyEl) {
-    emergencyEl.innerHTML = [
-      reviewField('Emergency Contact Name', patient.emergencyContactName),
-      reviewField('Emergency Contact Number', patient.emergencyContactNumber),
-    ].join('');
-  }
-
-  const noteEl = document.getElementById('pendingSubmissionNote');
-  if (noteEl) {
-    noteEl.innerHTML = `<i class="fa-solid fa-circle-info"></i>
-      Submitted via ${patient.source === 'app' ? 'mobile app' : 'manual encoding'} at ${patient.time}`;
-  }
-
-  document.getElementById('pendingDetailModal')?.classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-
-function closePendingDetail() {
-  document.getElementById('pendingDetailModal')?.classList.add('hidden');
-  document.body.style.overflow = '';
-  currentPendingPatient = null;
-}
-
-// View-only — Approve/Reject live on the pending list row, not in this
-// modal. Closing works from the header X, the footer Close button, or
-// clicking outside the card, same pattern as the vitals modal.
-document.getElementById('pendingModalClose')?.addEventListener('click', closePendingDetail);
-document.getElementById('pendingModalCloseBtn')?.addEventListener('click', closePendingDetail);
-document.getElementById('pendingDetailModal')?.addEventListener('click', (e) => {
-  if (e.target.id === 'pendingDetailModal') closePendingDetail();
-});
-
-/* ================================================================
    STATE
    ================================================================ */
 let activeRiskFilter = 'all';
@@ -382,7 +149,10 @@ function applyUrlFilters() {
    ================================================================ */
 function getFiltered() {
   return PATIENTS.filter(p => {
-    const matchRisk = activeRiskFilter === 'all' || p.risk === activeRiskFilter;
+    /* 'unassigned' is not a risk level — it selects the patients no
+       field worker can see, which is otherwise invisible from here. */
+    const matchRisk = activeRiskFilter === 'all'
+      || (activeRiskFilter === 'unassigned' ? !p.assignedBhwId : p.risk === activeRiskFilter);
     const matchBarangay = activeBarangay === 'all' || p.barangay === activeBarangay;
     const matchSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -397,11 +167,18 @@ function getFiltered() {
    reimplementing the same three-way branch slightly differently.
    ================================================================ */
 function riskPillHtml(risk, size) {
-  const cls = risk === 'critical' ? 'risk-pill--critical' : risk === 'warning' ? 'risk-pill--warning' : 'risk-pill--normal';
-  const icon = risk === 'critical' ? 'fa-triangle-exclamation' : risk === 'warning' ? 'fa-circle-exclamation' : 'fa-circle-check';
-  const lbl = risk === 'critical' ? 'Highly At Risk' : risk === 'warning' ? 'At Risk' : 'Normal';
+  const { cls, icon, lbl } = window.DiaCarePatients.riskMeta(risk);
   const style = size === 'sm' ? ' style="font-size:11px;padding:2px 8px"' : '';
   return `<span class="risk-pill ${cls}"${style}><i class="fa-solid ${icon}"></i>${lbl}</span>`;
+}
+/* Deterministic 6-digit number from a patient's long Firestore ID, so
+   the same patient always shows the same short ID on every load. */
+function sixDigitId(id) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return String(100000 + (hash % 900000));
 }
 
 /* ================================================================
@@ -414,7 +191,7 @@ function renderTable() {
   const countEl = document.getElementById('filterCount');
   if (!tbody) return;
 
-  const filtered = getFiltered();
+  const filtered = getFiltered().slice().sort((a, b) => b.score - a.score);
   if (countEl) countEl.textContent = `Showing ${filtered.length} of ${PATIENTS.length} patients`;
 
   if (filtered.length === 0) {
@@ -424,21 +201,33 @@ function renderTable() {
   }
   emptyEl?.classList.add('hidden');
 
-  tbody.innerHTML = filtered.map(p => {
+  tbody.innerHTML = filtered.map((p) => {
     const rowCls = p.risk === 'critical' ? 'row-critical' : p.risk === 'warning' ? 'row-warning' : '';
-    const lastRecord = p.history && p.history[0] ? p.history[0].datetime : '—';
+    const barColor = p.risk === 'critical' ? '#d0362f' : p.risk === 'warning' ? '#c2760a' : '#22a866';
+    const scoreNumCls = p.risk === 'critical' ? 'glc-critical' : p.risk === 'warning' ? 'glc-warning' : 'glc-normal';
+    const glcCls = p.glucose >= 250 || p.glucose < 70 ? 'glc-critical' : p.glucose >= 180 ? 'glc-warning' : 'glc-normal';
+    const trendCls = p.trend === 'worsening' ? 'trend-badge--worsening' : p.trend === 'improving' ? 'trend-badge--improving' : 'trend-badge--stable';
+    const trendIcon = p.trend === 'worsening' ? 'fa-arrow-trend-up' : p.trend === 'improving' ? 'fa-arrow-trend-down' : 'fa-minus';
+    const trendLbl = p.trend === 'worsening' ? 'Worsening' : p.trend === 'improving' ? 'Improving' : 'Stable';
 
     return `<tr class="${rowCls}" data-id="${p.id}">
-      <td style="font-size:12.5px;color:#6b7280;font-family:'JetBrains Mono',monospace">${p.id}</td>
+      <td><span style="font-family:var(--font-mono);font-size:12.5px;color:#000000">${sixDigitId(p.id)}</span></td>
+           <td>
+        <div class="pt-name">${p.name}</div>
+      </td>
+      <td style="font-size:13px;color:#000000">${p.barangay}</td>
       <td>
-        <div class="pt-cell">
-          <div class="pt-av" style="background:${p.color}">${p.initials}</div>
-          <div class="pt-name">${p.name}</div>
+        <div class="score-wrap">
+          <div class="score-bar-bg">
+            <div class="score-bar" style="width:${p.riskScore}%;background:${barColor}"></div>
+          </div>
+          <span class="score-num ${scoreNumCls}">${p.riskScore}%</span>
         </div>
       </td>
-      <td style="font-size:13px;color:#374151">${p.barangay}</td>
       <td>${riskPillHtml(p.risk)}</td>
-      <td style="font-size:12.5px;color:#6b7280">${lastRecord}</td>
+                  <td><span class="glc-val ${glcCls}">${p.glucose} <span style="font-size:10px;font-weight:400;color:inherit">mg/dL</span></span></td>
+           <td><span class="bp-val" style="color:#000000">${p.bp} <span style="font-size:10px;color:#000000">mmHg</span></span></td>
+      <td><span class="trend-badge ${trendCls}"><i class="fa-solid ${trendIcon}"></i> ${trendLbl}</span></td>
       <td>
         <button class="btn-view" data-id="${p.id}">
           <i class="fa-solid fa-eye"></i> View
@@ -447,7 +236,6 @@ function renderTable() {
     </tr>`;
   }).join('');
 
-  /* Row + View button click */
   tbody.querySelectorAll('[data-id]').forEach(el => {
     el.addEventListener('click', (e) => {
       const id = el.dataset.id;
@@ -519,8 +307,122 @@ function healthRecordCardHtml(h) {
     </table>
     <div class="hr-risk-row">Risk Classification: ${riskPillHtml(h.status, 'sm')}</div>
     ${h.notes ? `<div class="hr-notes"><strong>Notes:</strong> ${h.notes}</div>` : ''}
+    <div class="hr-card-actions">
+      <button class="btn-correct-visit" data-correct-visit="${h.id}">
+        <i class="fa-solid fa-pen"></i> Edit
+      </button>
+    </div>
   </div>`;
 }
+
+/* ================================================================
+   CORRECT A VISIT
+
+   A mistyped reading drives the patient's risk, their alerts and every
+   average taken from it until someone fixes it. The handset can correct
+   its own visits; this is the same at the RHU, where the clinical
+   judgement is.
+   ================================================================ */
+let correctingRecord = null;
+
+function openCorrectVisit(record) {
+  correctingRecord = record;
+  const set = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value ?? '';
+  };
+  const [sys, dia] = String(record.bp || '').split('/');
+
+  document.getElementById('correctVisitWhen').textContent =
+    `${currentPatient ? currentPatient.name + ' · ' : ''}${record.datetime}`;
+  set('cvGlucose', record.glucose);
+  set('cvSystolic', sys);
+  set('cvDiastolic', dia);
+  set('cvWeight', record.weight);
+  set('cvHeight', record.height);
+  set('cvTemp', record.temp);
+  set('cvAdherence', record.medicationAdherence || 'taken');
+  set('cvReferral', record.referral || 'none');
+  set('cvMedication', record.medicationName);
+  set('cvDosage', record.dosage);
+  set('cvNotes', record.notes);
+  const insulin = document.getElementById('cvInsulin');
+  if (insulin) insulin.checked = !!record.insulinUse;
+
+  document.getElementById('correctVisitModal')?.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCorrectVisit() {
+  document.getElementById('correctVisitModal')?.classList.add('hidden');
+  document.body.style.overflow = '';
+  correctingRecord = null;
+}
+
+document.getElementById('correctVisitClose')?.addEventListener('click', closeCorrectVisit);
+document.getElementById('correctVisitCancel')?.addEventListener('click', closeCorrectVisit);
+document.getElementById('correctVisitModal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'correctVisitModal') closeCorrectVisit();
+});
+
+document.getElementById('correctVisitSave')?.addEventListener('click', async () => {
+  if (!correctingRecord || !currentPatient) return;
+  const val = (id) => document.getElementById(id)?.value.trim() || '';
+  const num = (id) => {
+    const raw = val(id);
+    return raw === '' ? null : Number(raw);
+  };
+
+  const glucose = num('cvGlucose');
+  const sys = num('cvSystolic');
+  const dia = num('cvDiastolic');
+  if (!glucose || !sys || !dia) {
+    showToast('Glucose and both blood pressure values are required.', '#ef4444');
+    return;
+  }
+
+  const weight = num('cvWeight');
+  const height = num('cvHeight');
+  const bmi = weight && height ? +(weight / ((height / 100) ** 2)).toFixed(1) : null;
+
+  const btn = document.getElementById('correctVisitSave');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving';
+  try {
+    await window.DiaCarePatients.updateVisit(currentPatient.id, correctingRecord.id, {
+      glucose,
+      bp: `${sys}/${dia}`,
+      weight,
+      height,
+      temp: num('cvTemp'),
+      bmi,
+      medicationAdherence: val('cvAdherence'),
+      referral: val('cvReferral'),
+      medicationName: val('cvMedication'),
+      dosage: val('cvDosage'),
+      notes: val('cvNotes'),
+      insulinUse: document.getElementById('cvInsulin')?.checked,
+    });
+    showToast('Visit corrected.');
+    closeCorrectVisit();
+  } catch (err) {
+    console.error(err);
+    showToast('Could not save the correction. Please try again.', '#ef4444');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Save Correction';
+  }
+});
+
+/* One listener for every record card, in both tabs, rather than binding
+   per card on each re-render. */
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-correct-visit]');
+  if (!btn || !currentPatient) return;
+  const id = btn.getAttribute('data-correct-visit');
+  const record = (currentPatient.history || []).find((h) => h.id === id);
+  if (record) openCorrectVisit(record);
+});
 
 function renderHealthRecordsTab(patient) {
   const el = document.getElementById('healthRecordsList');
@@ -542,9 +444,19 @@ function renderRhuVisitTab(patient) {
 
 /* ================================================================
    PATIENT PROFILE TAB — static demographic/medical/emergency info
-   only, reusing reviewField()/.review-field-grid from the pending-
-   approval modal above so both places render identically.
+   only. reviewField() below used to live with the pending-approval
+   review modal; that modal is gone with the approval step, and the
+   helper moved here, its only remaining caller.
    ================================================================ */
+function reviewField(label, value) {
+  const hasValue = value && value !== 'Not specified';
+  return `
+    <div class="review-field">
+      <div class="review-field-label">${label}</div>
+      <div class="review-field-value${hasValue ? '' : ' review-field-value--empty'}">${hasValue ? value : 'Not specified'}</div>
+    </div>`;
+}
+
 function renderProfileTab(patient) {
   const personalEl = document.getElementById('profilePersonalGrid');
   if (personalEl) {
@@ -554,7 +466,6 @@ function renderProfileTab(patient) {
       reviewField('Last Name', patient.lastName),
       reviewField('Date of Birth', patient.dob),
       reviewField('Sex', patient.sex),
-      reviewField('Home Address', patient.address),
       reviewField('Barangay', patient.barangay),
       reviewField('Purok', patient.purok),
       reviewField('Contact Number', patient.contactNumber),
@@ -578,6 +489,73 @@ function renderProfileTab(patient) {
       reviewField('Emergency Contact Number', patient.emergencyContactNumber),
     ].join('');
   }
+
+  renderAssignControl(patient);
+}
+
+/* ================================================================
+   ASSIGN TO A FIELD WORKER
+
+   The app pulls `patients where assignedBhwId == my uid`, so this
+   field is the whole link between a patient and a phone. A patient
+   encoded at the RHU is written with an empty one and reaches nobody
+   until a nurse sets it here.
+   ================================================================ */
+async function renderAssignControl(patient) {
+  const select = document.getElementById('assignBhwSelect');
+  const btn = document.getElementById('assignBhwBtn');
+  const note = document.getElementById('assignBhwNote');
+  if (!select || !btn || !window.DiaCarePatients) return;
+
+  const roster = await window.DiaCarePatients.loadBhwRoster();
+
+  select.innerHTML = ['<option value="">Not assigned — visible only at the RHU</option>']
+    .concat(roster.map(b => {
+      const where = [b.barangay, b.purok].filter(Boolean).join(' · ');
+      return `<option value="${b.id}">${b.name}${where ? ' — ' + where : ''}</option>`;
+    }))
+    .join('');
+
+  select.value = patient.assignedBhwId || '';
+  btn.disabled = true;
+
+  const describe = () => {
+    if (!note) return;
+    if (patient.assignedBhwId) {
+      note.className = 'assign-note';
+      note.textContent =
+        `Syncs to ${window.DiaCarePatients.bhwName(patient.assignedBhwId)}'s app on their next sync.`;
+    } else {
+      note.className = 'assign-note assign-note--warn';
+      note.textContent =
+        "No field worker assigned — this patient does not appear on any BHW's phone.";
+    }
+  };
+  describe();
+
+  select.onchange = () => {
+    btn.disabled = select.value === (patient.assignedBhwId || '');
+  };
+
+  btn.onclick = async () => {
+    const chosen = select.value;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving';
+    try {
+      await window.DiaCarePatients.assignPatient(patient.id, chosen);
+      patient.assignedBhwId = chosen;
+      showToast(chosen
+        ? `Assigned to ${window.DiaCarePatients.bhwName(chosen)}.`
+        : 'Assignment cleared.');
+      describe();
+    } catch (err) {
+      showToast('Could not save the assignment. Please try again.', '#ef4444');
+      select.value = patient.assignedBhwId || '';
+    } finally {
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Save';
+      btn.disabled = select.value === (patient.assignedBhwId || '');
+    }
+  };
 }
 
 /* ================================================================
@@ -824,7 +802,7 @@ document.getElementById('btnExport')?.addEventListener('click', () => {
     ...filtered.map(p => [
       p.id, p.name, p.age, p.sex, p.barangay,
       p.glucose ?? 'No data yet', p.bp ?? 'No data yet',
-      p.risk === 'critical' ? 'Highly At Risk' : p.risk === 'warning' ? 'At Risk' : 'Normal',
+      window.DiaCarePatients.riskMeta(p.risk).lbl,
       p.source === 'app' ? 'Mobile App' : 'Manual Entry',
       p.time,
     ]),
@@ -859,7 +837,6 @@ function showToast(msg, color) {
    ================================================================ */
 window.addEventListener('load', () => {
   renderStats();
-  renderPendingApprovals();
   renderTopNavNotifications();
   initNotifDropdown();
   populateBarangays();
@@ -898,8 +875,22 @@ function recomputeFromRoster() {
 window.addEventListener('diacare:patients-loaded', () => {
   recomputeFromRoster();
   renderStats();
-  renderPendingApprovals();
   populateBarangays();
   applyUrlFilters();
   renderTable();
+
+  /* The open profile holds a snapshot of the patient from before the
+     update landed. After correcting a visit — or after a BHW's sync
+     arrives while a nurse has the profile open — that snapshot is stale,
+     and the corrected reading would still show the old number until the
+     modal was closed and reopened. */
+  if (currentPatient) {
+    const fresh = PATIENTS.find((p) => p.id === currentPatient.id);
+    if (fresh) {
+      currentPatient = fresh;
+      renderProfileTab(fresh);
+      renderHealthRecordsTab(fresh);
+      renderRhuVisitTab(fresh);
+    }
+  }
 });

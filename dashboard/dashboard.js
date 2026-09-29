@@ -51,7 +51,10 @@ document.addEventListener('click', (e) => {
    so this page's stats agree with Patient Monitoring, Reports,
    Alerts, and Risk Analysis instead of using an independent list.
    ================================================================ */
-let TODAY_PATIENTS = window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [];
+/* Every active patient on the register. Named for what it is — an
+   earlier name, TODAY_PATIENTS, implied a day's slice that nothing on
+   this page actually takes. */
+let ROSTER = window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [];
 
 /* ================================================================
    CRITICAL ALERT STRIP — only shown when someone actually needs
@@ -64,12 +67,23 @@ function renderRibbonStats() {
   const refEl = document.getElementById('statReferrals');
   const brgyEl = document.getElementById('statBarangaysReached');
 
-  const appCount = TODAY_PATIENTS.filter(p => p.source === 'app').length;
-  const manualCount = TODAY_PATIENTS.filter(p => p.source === 'manual').length;
-  const referrals = TODAY_PATIENTS.filter(p => p.referral && p.referral !== 'none').length;
-  const barangaysReached = new Set(TODAY_PATIENTS.map(p => p.barangay)).size;
+  /* Submissions are counted per visit, not per patient. p.source is
+     only the source of a patient's *latest* reading, so counting
+     patients here reported "2" for two BHW accounts no matter how many
+     household visits they had actually synced — every follow-up visit
+     after the first collapsed into the same person. Counting rows of
+     p.history is what the label "App Submissions" claims to be.
 
-  if (totalEl) totalEl.textContent = TODAY_PATIENTS.length.toLocaleString('en-US');
+     Every synced patient is in the roster now that approval is gone, so
+     this is the whole set — no separate pending queue to add back in. */
+  const allVisits = ROSTER.flatMap(p => p.history || []);
+
+  const appCount = allVisits.filter(v => v.source === 'app').length;
+  const manualCount = allVisits.filter(v => v.source === 'manual').length;
+  const referrals = ROSTER.filter(p => p.referral && p.referral !== 'none').length;
+  const barangaysReached = new Set(ROSTER.map(p => p.barangay)).size;
+
+  if (totalEl) totalEl.textContent = ROSTER.length.toLocaleString('en-US');
   if (appEl) appEl.textContent = appCount.toLocaleString('en-US');
   if (manEl) manEl.textContent = manualCount.toLocaleString('en-US');
   if (refEl) refEl.textContent = referrals.toLocaleString('en-US');
@@ -80,7 +94,7 @@ function renderRibbonStats() {
 }
 
 function renderStats() {
-  const critical = TODAY_PATIENTS.filter(p => p.risk === 'critical').length;
+  const critical = ROSTER.filter(p => p.risk === 'critical').length;
 
   const strip = document.getElementById('criticalStrip');
   const stripCount = document.getElementById('criticalStripCount');
@@ -91,27 +105,6 @@ function renderStats() {
     } else {
       strip.classList.add('hidden');
     }
-  }
-}
-
-/* ================================================================
-   PENDING APPROVALS STRIP — entirely separate from renderStats()
-   above on purpose: this reads from PENDING_PATIENTS (patients not
-   yet approved, so not part of TODAY_PATIENTS at all), and toggles
-   its own independent banner. Doesn't touch the critical strip, the
-   stat ribbon, or anything else on the page.
-   ================================================================ */
-function renderPendingStrip() {
-  const pending = window.DiaCarePatients ? window.DiaCarePatients.PENDING_PATIENTS : [];
-  const strip = document.getElementById('pendingStrip');
-  const stripCount = document.getElementById('pendingStripCount');
-  if (!strip) return;
-
-  if (pending.length > 0) {
-    if (stripCount) stripCount.textContent = `${pending.length} patient${pending.length === 1 ? '' : 's'}`;
-    strip.classList.remove('hidden');
-  } else {
-    strip.classList.add('hidden');
   }
 }
 
@@ -145,36 +138,37 @@ function renderRecentTable() {
      Within the same risk level, most recent reading first — this is
      a "recent readings" widget, not the full roster, so it's capped
      to RECENT_TABLE_LIMIT rows with "View all" for the rest. */
-  const sorted = [...TODAY_PATIENTS]
-    .sort((a, b) => RISK_SEVERITY[a.risk] - RISK_SEVERITY[b.risk] || timeToMinutes(b.time) - timeToMinutes(a.time))
+  /* Ordered by the actual visit timestamp. This used to compare the
+     clock-time string only, so a reading at 9 AM three weeks ago ranked
+     above one at 8 AM this morning. */
+  const when = (p) => (p.lastVisit ? p.lastVisit.getTime() : 0);
+  const sorted = [...ROSTER]
+    .sort((a, b) => RISK_SEVERITY[a.risk] - RISK_SEVERITY[b.risk] || when(b) - when(a))
     .slice(0, RECENT_TABLE_LIMIT);
 
   tbody.innerHTML = sorted.map(p => {
     const glcCls = p.risk === 'critical' ? 'glc-critical' : p.risk === 'warning' ? 'glc-warning' : 'glc-normal';
-    const pillCls = p.risk === 'critical' ? 'risk-pill--critical' : p.risk === 'warning' ? 'risk-pill--warning' : 'risk-pill--normal';
-    const pillIcon = p.risk === 'critical' ? 'fa-triangle-exclamation' : p.risk === 'warning' ? 'fa-circle-exclamation' : 'fa-circle-check';
-    const pillLbl = p.risk === 'critical' ? 'Highly At Risk' : p.risk === 'warning' ? 'At Risk' : 'Normal';
+    const pillCls = window.DiaCarePatients.riskMeta(p.risk).cls;
+    const pillIcon = window.DiaCarePatients.riskMeta(p.risk).icon;
+    const pillLbl = window.DiaCarePatients.riskMeta(p.risk).lbl;
     const rowCls = p.risk === 'critical' ? 'row-critical' : p.risk === 'warning' ? 'row-warning' : '';
     const srcCls = p.source === 'app' ? 'source-badge--app' : 'source-badge--manual';
     const srcIcon = p.source === 'app' ? 'fa-mobile-screen' : 'fa-keyboard';
     const srcLbl = p.source === 'app' ? 'App' : 'Manual';
 
-    return `<tr class="${rowCls}">
+       return `<tr class="${rowCls}">
       <td>
-        <div class="pt-cell">
-          <div class="pt-av" style="background:${p.color}">${p.initials}</div>
-          <span class="pt-name">${p.name}</span>
-        </div>
+        <span class="pt-name">${p.name}</span>
       </td>
       <td><span class="glc-val ${glcCls}">${p.glucose} mg/dL</span></td>
-      <td><span class="bp-val">${p.bp} mmHg</span></td>
+           <td><span class="bp-val" style="color:#000000">${p.bp} mmHg</span></td>
       <td><span class="risk-pill ${pillCls}"><i class="fa-solid ${pillIcon}"></i>${pillLbl}</span></td>
-      <td>
-        <span class="source-badge ${srcCls}">
-          <i class="fa-solid ${srcIcon}"></i> ${srcLbl}
+            <td>
+        <span class="source-badge ${srcCls}" style="color:#000000">
+          <i class="fa-solid ${srcIcon}" style="color:#000000"></i> ${srcLbl}
         </span>
       </td>
-      <td style="font-size:12px;color:#93a89d;font-family:'JetBrains Mono',monospace;white-space:nowrap">${p.time}</td>
+      <td style="font-size:12px;color:#000000;font-family:'JetBrains Mono',monospace;white-space:nowrap">${p.time}</td>
     </tr>`;
   }).join('');
 }
@@ -191,10 +185,10 @@ function drawDonut() {
   const cx = size / 2, cy = size / 2;
   const R = size / 2 - 12, r = R * 0.58;
 
-  const critical = TODAY_PATIENTS.filter(p => p.risk === 'critical').length;
-  const warning = TODAY_PATIENTS.filter(p => p.risk === 'warning').length;
-  const normal = TODAY_PATIENTS.filter(p => p.risk === 'normal').length;
-  const total = TODAY_PATIENTS.length;
+  const critical = ROSTER.filter(p => p.risk === 'critical').length;
+  const warning = ROSTER.filter(p => p.risk === 'warning').length;
+  const normal = ROSTER.filter(p => p.risk === 'normal').length;
+  const total = ROSTER.length;
 
   const segs = [
     { label: 'High Risk', count: critical, color: '#d0362f', risk: 'critical' },
@@ -251,17 +245,19 @@ function renderMissions() {
   // sorting by index used to surface the barangays that went quiet
   // earliest instead of the ones actually active most recently.
   const byBarangay = new Map();
-  TODAY_PATIENTS.forEach(p => {
+  ROSTER.forEach(p => {
+    const ts = p.lastVisit ? p.lastVisit.getTime() : 0;
     if (!byBarangay.has(p.barangay)) {
-      byBarangay.set(p.barangay, { barangay: p.barangay, count: 0, latestTime: p.time });
+      byBarangay.set(p.barangay, { barangay: p.barangay, count: 0, latestTs: ts, latestTime: p.time });
     }
     const entry = byBarangay.get(p.barangay);
     entry.count++;
-    if (timeToMinutes(p.time) > timeToMinutes(entry.latestTime)) entry.latestTime = p.time;
+    if (ts > entry.latestTs) { entry.latestTs = ts; entry.latestTime = p.time; }
   });
 
+  /* Real timestamps, not clock-time strings — see renderRecentTable. */
   const activity = [...byBarangay.values()]
-    .sort((a, b) => timeToMinutes(b.latestTime) - timeToMinutes(a.latestTime))
+    .sort((a, b) => b.latestTs - a.latestTs)
     .slice(0, 5);
 
   if (activity.length === 0) {
@@ -285,10 +281,12 @@ function renderMissions() {
   if (lastEl) {
     // Same fix as above — the actual most recent submission by time,
     // not just whichever patient happens to sit first in the array.
-    const mostRecent = TODAY_PATIENTS.length
-      ? [...TODAY_PATIENTS].sort((a, b) => timeToMinutes(b.time) - timeToMinutes(a.time))[0]
+    const mostRecent = ROSTER.length
+      ? [...ROSTER].sort((a, b) => (b.lastVisit?.getTime() || 0) - (a.lastVisit?.getTime() || 0))[0]
       : null;
-    lastEl.textContent = mostRecent ? `${mostRecent.name}, ${mostRecent.time}` : '—';
+    lastEl.textContent = mostRecent && mostRecent.lastVisit
+      ? `${mostRecent.name}, ${mostRecent.lastVisit.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`
+      : '—';
   }
 }
 
@@ -310,7 +308,6 @@ function showToast(msg) {
 window.addEventListener('load', () => {
   renderRibbonStats();
   renderStats();
-  renderPendingStrip();
   renderTopNavNotifications();
   initNotifDropdown();
   renderRecentTable();
@@ -332,14 +329,13 @@ window.addEventListener('load', () => {
    ================================================================ */
 
 function recomputeFromRoster() {
-  TODAY_PATIENTS = window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [];
+  ROSTER = window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [];
 }
 
 window.addEventListener('diacare:patients-loaded', () => {
   recomputeFromRoster();
   renderRibbonStats();
   renderStats();
-  renderPendingStrip();
   renderRecentTable();
   renderMissions();
   drawDonut();

@@ -44,20 +44,119 @@ const NOTIF_META = {
   missed: { icon: 'fa-clock-rotate-left', cls: 'missed' },
 };
 
+/* ── Alert preferences (Settings → Alert Preferences) ───────────────
+   Per browser, in localStorage. Defaults mirror the checkboxes' own
+   defaults so a nurse who never opened Settings gets the same bell as
+   before. Missing keys fall back rather than switching an alert off. */
+const ALERT_PREF_KEY = 'diacare_alert_preferences_v1';
+const ALERT_PREF_DEFAULTS = {
+  alertCriticalGlucose: true,
+  alertCriticalBP: true,
+  alertAtRisk: true,
+  alertMissed: false,
+  alertBrowser: false,
+  alertSound: false,
+};
+
+function loadAlertPrefs() {
+  try {
+    const raw = localStorage.getItem(ALERT_PREF_KEY);
+    return raw ? { ...ALERT_PREF_DEFAULTS, ...JSON.parse(raw) } : { ...ALERT_PREF_DEFAULTS };
+  } catch {
+    return { ...ALERT_PREF_DEFAULTS };
+  }
+}
+
+/* Which of a critical patient's vitals crossed the line. A critical
+   alert can be switched off for glucose and left on for BP, so the two
+   are told apart here rather than treated as one "critical". */
+function criticalCauses(p) {
+  const [sys, dia] = String(p.bp || '').split('/').map(Number);
+  return {
+    glucose: !!p.glucose && (p.glucose >= 250 || p.glucose < 70),
+    bp: (sys >= 140) || (dia >= 90),
+  };
+}
+
 function getDiacareNotifications() {
   const patients = window.DiaCarePatients ? window.DiaCarePatients.PATIENTS : [];
   const acks = loadAcks();
+  const prefs = loadAlertPrefs();
   return patients
     .map(p => {
-      const type = p.missedToday ? 'missed' : p.risk === 'critical' ? 'critical' : p.risk === 'warning' ? 'atrisk' : null;
+      let type = null;
+      if (p.missedToday) {
+        if (prefs.alertMissed) type = 'missed';
+      } else if (p.risk === 'critical') {
+        const cause = criticalCauses(p);
+        if ((cause.glucose && prefs.alertCriticalGlucose) || (cause.bp && prefs.alertCriticalBP)) type = 'critical';
+      } else if (p.risk === 'warning') {
+        if (prefs.alertAtRisk) type = 'atrisk';
+      }
       if (!type || acks[p.id]) return null;
       return { id: p.id, type, name: p.name, trigger: buildTrigger(p), time: p.time };
     })
     .filter(Boolean);
 }
 
+/* ── Popup and sound ────────────────────────────────────────────────
+   Only for a critical alert that was not in the previous render — the
+   roster re-announces on every Firestore snapshot, and a nurse does not
+   want the same patient chiming at her every few seconds. The first
+   render after load seeds the set silently, so opening a page does not
+   replay every existing alert. */
+let seenCritical = null;
+
+function announceNewCriticals(notifications) {
+  const prefs = loadAlertPrefs();
+  const current = new Set(notifications.filter(n => n.type === 'critical').map(n => n.id));
+
+  if (seenCritical === null) {
+    seenCritical = current;
+    return;
+  }
+
+  const fresh = notifications.filter(n => n.type === 'critical' && !seenCritical.has(n.id));
+  seenCritical = current;
+  if (!fresh.length) return;
+
+  if (prefs.alertBrowser && 'Notification' in window && Notification.permission === 'granted') {
+    fresh.forEach(n => {
+      try {
+        new Notification(`High risk: ${n.name}`, { body: n.trigger, tag: `diacare-${n.id}` });
+      } catch { /* the browser refused; the bell still shows it */ }
+    });
+  }
+
+  if (prefs.alertSound) playAlertTone();
+}
+
+/* Two short tones from the Web Audio API — no audio file to ship, and
+   nothing to fetch on a slow connection. Silently does nothing if the
+   browser has not yet let the page make sound. */
+function playAlertTone() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    [0, 0.18].forEach((offset) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime + offset);
+      gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + offset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offset + 0.15);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(ctx.currentTime + offset);
+      osc.stop(ctx.currentTime + offset + 0.16);
+    });
+  } catch { /* autoplay policy — nothing to do */ }
+}
+
 function renderTopNavNotifications() {
   const notifications = getDiacareNotifications();
+  announceNewCriticals(notifications);
 
   const bellBadge = document.getElementById('navBellBadge');
   if (bellBadge) bellBadge.textContent = notifications.length;

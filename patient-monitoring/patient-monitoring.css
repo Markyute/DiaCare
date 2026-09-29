@@ -193,13 +193,32 @@
   vertical-align: middle;
 }
 
-.patient-table th:nth-child(4),
-.patient-table td:nth-child(4),
-.patient-table th:nth-child(6),
-.patient-table td:nth-child(6) {
+.patient-table th:nth-child(1), .patient-table td:nth-child(1),
+.patient-table th:nth-child(4), .patient-table td:nth-child(4),
+.patient-table th:nth-child(5), .patient-table td:nth-child(5),
+.patient-table th:nth-child(6), .patient-table td:nth-child(6),
+.patient-table th:nth-child(7), .patient-table td:nth-child(7),
+.patient-table th:nth-child(8), .patient-table td:nth-child(8),
+.patient-table th:nth-child(9), .patient-table td:nth-child(9) {
   text-align: center;
 }
+/* Risk score bar */
+.score-wrap { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+.score-bar-bg {
+  flex: 1; height: 8px; border-radius: 999px;
+  background: var(--border-soft); overflow: hidden;
+}
+.score-bar { height: 100%; border-radius: 999px; transition: width .6s cubic-bezier(.22,1,.36,1); }
+.score-num { font-family: var(--font-mono); font-size: 12.5px; font-weight: 700; flex-shrink: 0; }
 
+/* Trend indicator */
+.trend-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px; font-size: 11.5px; font-weight: 700;
+}
+.trend-badge--worsening { background: #fff7ed; color: #c2410c; }
+.trend-badge--improving { background: var(--status-good-bg); color: var(--status-good); }
+.trend-badge--stable    { background: var(--brand-50); color: var(--brand-700); }
 .patient-table tbody tr:last-child td {
   border-bottom: none;
 }
@@ -1014,4 +1033,105 @@
 @media (prefers-reduced-motion: reduce) {
   .btn-encode { transition: none; }
   .btn-encode:hover { transform: none; }
+}
+
+/* ================================================================
+   ASSIGNED FIELD WORKER
+   Sits in the patient profile tab. Wraps on narrow screens so the
+   Save button never gets pushed off the modal.
+   ================================================================ */
+.assign-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.assign-select {
+  flex: 1;
+  min-width: 200px;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg-alt);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+}
+
+.assign-select:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px rgba(34, 168, 102, .12);
+}
+
+.assign-note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.assign-note--warn {
+  color: var(--status-warning);
+  font-weight: 600;
+}
+
+/* ================================================================
+   CORRECT VISIT MODAL
+   ================================================================ */
+.correct-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 520px) {
+  .correct-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.correct-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.correct-note {
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  background: var(--brand-50);
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.hr-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.btn-correct-visit {
+  border: 1.5px solid var(--border);
+  background: var(--bg-alt);
+  color: var(--ink-soft);
+  border-radius: var(--radius-pill);
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.btn-correct-visit:hover {
+  border-color: var(--brand-300);
+  background: var(--brand-50);
+  color: var(--ink);
 }
